@@ -222,6 +222,8 @@ class EditorTab(ctk.CTkFrame):
     # ------------------------------------------------------------------
 
     def _open_file(self):
+        print("OPEN FILE BUTTON CLICKED")
+        import winsound; winsound.Beep(1000, 200)
         path = filedialog.askopenfilename(
             parent=self,  # ensures dialog appears in front of the main window
             title=t("open_file"),
@@ -405,6 +407,8 @@ class EditorTab(ctk.CTkFrame):
         self._rename_status.configure(text="Auto-filled — click Rename to apply", text_color=C["text_muted"])
 
     def _open_in_explorer(self):
+        print("EXPLORER BUTTON CLICKED")
+        import winsound; winsound.Beep(500, 200)
         if not self._filepath:
             self._rename_status.configure(text="No file loaded", text_color=C["text_muted"])
             return
