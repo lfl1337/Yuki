@@ -183,12 +183,14 @@ class HistoryTab(ctk.CTkFrame):
         history_manager: HistoryManager,
         on_play: Optional[Callable] = None,
         on_edit_tags: Optional[Callable] = None,
+        settings: Optional[dict] = None,
         **kwargs,
     ):
         super().__init__(master, fg_color=C["bg_primary"], **kwargs)
         self._history = history_manager
         self._on_play = on_play or (lambda e: None)
         self._on_edit_tags = on_edit_tags or (lambda fp: None)
+        self._settings = settings or {}
         self._entry_widgets: List[HistoryCard] = []
         self._filter_platform: str = "All"
         self._search_job: Optional[str] = None
@@ -359,28 +361,59 @@ class HistoryTab(ctk.CTkFrame):
         self._shown_count = _PAGE_SIZE
         self.refresh()
 
+    def _find_file(self, entry: dict) -> Optional[str]:
+        """Resolve the actual file path for a history entry.
+
+        Priority:
+        1. Stored filepath exists as-is.
+        2. Same stem with a different extension (e.g. .webm → .mp3 after postprocessing).
+        3. Scan the configured download folder for a file whose name contains the title.
+        """
+        fp = entry.get("filepath", "")
+        if fp:
+            p = Path(fp)
+            if p.exists():
+                return str(p)
+            # Extension swap — yt-dlp stores the pre-postprocessing name (.webm)
+            for ext in (".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac", ".mp4"):
+                candidate = p.with_suffix(ext)
+                if candidate.exists():
+                    return str(candidate)
+
+        # Scan download folder by title
+        title = entry.get("title", "")
+        if not title:
+            return None
+        raw_dir = self._settings.get("default_download_dir", "")
+        download_dir = Path(raw_dir) if raw_dir else Path.home() / "Downloads" / "Yuki"
+        if download_dir.is_dir():
+            search_term = title[:20].lower()
+            for ext in (".mp3", ".m4a", ".flac", ".wav", ".mp4"):
+                for f in download_dir.glob(f"*{ext}"):
+                    if search_term in f.stem.lower():
+                        return str(f)
+        return None
+
     def _play(self, entry: dict):
-        filepath = entry.get("filepath", "")
-        if filepath and Path(filepath).exists():
-            self._on_play(entry)
+        fp = self._find_file(entry)
+        if fp:
+            self._on_play({**entry, "filepath": fp})
 
     def _edit(self, entry: dict):
-        filepath = entry.get("filepath", "")
-        if filepath and not Path(filepath).exists():
-            filename = Path(filepath).name
-            fallback = Path.home() / "Downloads" / "Yuki" / filename
-            if fallback.exists():
-                filepath = str(fallback)
-        self._on_edit_tags(filepath)
+        fp = self._find_file(entry)
+        self._on_edit_tags(fp or "")
 
     def _open_folder(self, entry: dict):
-        filepath = entry.get("filepath", "")
-        if filepath:
-            folder = str(Path(filepath).parent)
-            try:
-                os.startfile(folder)
-            except Exception:
-                subprocess.Popen(["explorer", folder])
+        fp = self._find_file(entry)
+        if fp:
+            folder = str(Path(fp).parent.resolve())
+        else:
+            raw_dir = self._settings.get("default_download_dir", "")
+            folder = str(
+                Path(raw_dir).resolve() if raw_dir
+                else (Path.home() / "Downloads" / "Yuki").resolve()
+            )
+        subprocess.Popen(["explorer", folder])
 
     def _delete(self, entry: dict):
         self._history.delete(entry.get("id", ""))

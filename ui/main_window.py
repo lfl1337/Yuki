@@ -135,6 +135,7 @@ class MainWindow(ctk.CTk):
             history_manager=self._history,
             on_play=self._play_from_history,
             on_edit_tags=self._on_edit_tags,
+            settings=self._settings,
         )
         self._editor_tab = EditorTab(
             self._content,
@@ -287,22 +288,17 @@ class MainWindow(ctk.CTk):
 
     def _reload_ui(self):
         """Refresh all translatable UI text after a language change."""
-        try:
-            self._downloader_tab.refresh_text()
-        except Exception:
-            pass
-        try:
-            self._history_tab.refresh_text()
-        except Exception:
-            pass
-        try:
-            self._editor_tab.refresh_text()
-        except Exception:
-            pass
-        try:
-            self._player_bar.refresh_text()
-        except Exception:
-            pass
+        for widget in (
+            self._sidebar,
+            self._downloader_tab,
+            self._history_tab,
+            self._editor_tab,
+            self._player_bar,
+        ):
+            try:
+                widget.refresh_text()
+            except Exception:
+                pass
 
     def _apply_theme(self, theme: str):
         if theme == "system":
