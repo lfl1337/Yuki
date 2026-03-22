@@ -63,6 +63,7 @@ class AudioPlayer:
             self._duration = self._get_duration(filepath)
             self._playing = False
             self._paused = False
+            logger.info("Player loaded: %s", filepath)
         except Exception as exc:
             logger.error("load failed: %s", exc)
             raise RuntimeError(f"Cannot load audio file: {exc}") from exc
@@ -81,6 +82,7 @@ class AudioPlayer:
             self._playing = True
             pygame.mixer.music.set_volume(self._volume)
             self._start_monitor()
+            logger.info("Playback started")
         except Exception as exc:
             logger.error("play failed: %s", exc)
 
@@ -92,6 +94,7 @@ class AudioPlayer:
             pygame.mixer.music.pause()
             self._paused = True
             self._playing = False
+            logger.info("Playback paused at %.1fs", self._position)
         except Exception as exc:
             logger.error("pause failed: %s", exc)
 
@@ -117,6 +120,7 @@ class AudioPlayer:
         self._playing = False
         self._paused = False
         self._position = 0.0
+        logger.info("Playback stopped")
         self._stop_monitor.set()
 
     def seek(self, seconds: float):

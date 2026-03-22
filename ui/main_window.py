@@ -180,6 +180,7 @@ class MainWindow(ctk.CTk):
             from ui.log_viewer import LogViewer
             LogViewer(self)
             return
+        logger.info("Tab switched to: %s", page)
         self._sidebar.set_active(page)
         self._show_page(page)
 
@@ -284,6 +285,7 @@ class MainWindow(ctk.CTk):
     def _on_language_change(self, lang_code: str):
         self._settings["language"] = lang_code
         self._save_settings()
+        logger.debug("Language changed to: %s", lang_code)
         self._reload_ui()
 
     def _reload_ui(self):
@@ -309,6 +311,7 @@ class MainWindow(ctk.CTk):
                 theme = "dark"
         ctk.set_appearance_mode(theme)
         self._settings["theme"] = theme
+        logger.debug("Theme changed to: %s", theme)
 
     def _toggle_theme(self):
         current = self._settings.get("theme", "dark")
@@ -317,6 +320,7 @@ class MainWindow(ctk.CTk):
         ctk.set_appearance_mode(new)
         self._theme_btn.configure(text="☀" if new == "dark" else "🌙")
         self._save_settings()
+        logger.debug("Theme changed to: %s", new)
 
     # ------------------------------------------------------------------
     # Toast

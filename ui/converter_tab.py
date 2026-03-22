@@ -3,6 +3,7 @@ Converter tab — audio and video conversion via bundled ffmpeg.
 """
 
 import json
+import logging
 import re
 import subprocess
 import threading
@@ -13,6 +14,8 @@ from typing import Dict, Optional
 import customtkinter as ctk
 
 from config import FFMPEG_PATH, FFPROBE_PATH, UI_COLORS
+
+logger = logging.getLogger(__name__)
 
 C = UI_COLORS
 
@@ -570,6 +573,8 @@ class ConverterTab(ctk.CTkFrame):
                 "scale": self._resolution.replace("p", "") if self._resolution != "Original" else "480",
             }
             cmd = self._build_ffmpeg_cmd(fp, out_path, self._output_format, settings)
+            logger.info("Conversion started: %s -> %s", fp, self._output_format)
+            logger.debug("ffmpeg command: %s", " ".join(cmd))
             item_id = fp
 
             def make_update_fn(iid):
@@ -592,12 +597,16 @@ class ConverterTab(ctk.CTkFrame):
             self.after(0, lambda: self._set_row_status(item_id, "converting"))
             result = self._run_conversion(item, item.cancel_event)
             if result == "done":
+                output_path = self._resolve_output_path(item.input_path)
+                logger.info("Conversion complete: %s", output_path)
                 self.after(0, lambda: self._set_row_status(item_id, "done"))
             elif result == "cancelled":
                 self.after(0, lambda: self._set_row_status(item_id, "cancelled"))
             else:
+                logger.error("Conversion failed: %s — %s", item.input_path, result)
                 self.after(0, lambda: self._set_row_status(item_id, "failed"))
-        except Exception:
+        except Exception as exc:
+            logger.error("Conversion failed: %s — %s", item.input_path, exc)
             self.after(0, lambda: self._set_row_status(item_id, "failed"))
         finally:
             _SEM.release()

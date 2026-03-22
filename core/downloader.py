@@ -109,6 +109,7 @@ class Downloader:
                 "encoding": "utf-8",
             }
         )
+        logger.info("Download started: %s  format=audio  quality=%s", url, quality)
         self._run_download(url, opts)
 
     def download_video(
@@ -135,6 +136,7 @@ class Downloader:
                 "writethumbnail": False,
             }
         )
+        logger.info("Download started: %s  format=video  quality=%s", url, quality)
         self._run_download(url, opts)
 
     def download_spotify(
@@ -182,6 +184,7 @@ class Downloader:
             speed = d.get("speed") or 0
             eta = d.get("eta") or 0
             filename = Path(d.get("filename", "")).name
+            logger.debug("Progress: %.1f%%  speed=%s  eta=%s", percent, speed, eta)
             self._progress_cb(percent, speed, eta, filename)
         elif status == "finished":
             self._current_filepath = d.get("filename", "")
@@ -199,10 +202,12 @@ class Downloader:
                     "platform": info.get("extractor_key", ""),
                     "filesize": info.get("filesize") or info.get("filesize_approx", 0),
                 }
+                logger.info("Download complete: %s  (%s bytes)", filepath, metadata.get("filesize", 0))
                 self._completion_cb(filepath, metadata)
         except _DownloadCancelled:
             logger.info("Download cancelled by user")
         except yt_dlp.utils.DownloadError as exc:
+            logger.error("Download failed: %s — %s", url, exc)
             self._error_cb(str(exc))
         except Exception as exc:
             logger.exception("Unexpected download error")

@@ -60,13 +60,15 @@ class MP3Tagger:
         ext = filepath.suffix.lower()
         try:
             if ext in (".mp3",):
-                return self._read_id3(filepath)
+                result = self._read_id3(filepath)
             elif ext in (".m4a", ".mp4", ".aac"):
-                return self._read_mp4(filepath)
+                result = self._read_mp4(filepath)
             else:
-                return self._read_id3(filepath)
+                result = self._read_id3(filepath)
+            logger.info("Tags read: %s", filepath)
+            return result
         except Exception as exc:
-            logger.error("read_tags failed for %s: %s", filepath, exc)
+            logger.error("Tag read failed: %s — %s", filepath, exc)
             return {}
 
     def write_tags(self, filepath: Union[str, Path], tags: dict):
@@ -80,8 +82,9 @@ class MP3Tagger:
                 self._write_mp4(filepath, tags)
             else:
                 self._write_id3(filepath, tags)
+            logger.info("Tags saved: %s", filepath)
         except Exception as exc:
-            logger.error("write_tags failed for %s: %s", filepath, exc)
+            logger.error("Tag save failed: %s — %s", filepath, exc)
             raise
 
     def set_cover_art(self, filepath: Union[str, Path], source: Union[str, Path]):
@@ -101,6 +104,7 @@ class MP3Tagger:
                 self._set_cover_mp4(filepath, image_data, mime)
             else:
                 self._set_cover_id3(filepath, image_data, mime)
+            logger.info("Cover art embedded: %s", filepath)
         except Exception as exc:
             logger.error("set_cover_art failed: %s", exc)
             raise
