@@ -8,15 +8,22 @@
 ; General
 ; VERSION can be injected at compile time: makensis /DVERSION=1.2.3 installer.nsi
 !ifndef VERSION
-  !define VERSION "0.0.0"
+  !define VERSION "1.0.0"
 !endif
-Name "Yuki"
+Name "Yuki ${VERSION}"
 OutFile "Yuki_Setup_${VERSION}.exe"
 Unicode True
 InstallDir "$PROGRAMFILES64\Yuki"
 InstallDirRegKey HKCU "Software\Yuki" "InstallDir"
 RequestExecutionLevel admin
 SetCompressor /SOLID lzma
+
+; Embed version metadata in the installer exe
+VIProductVersion "${VERSION}.0"
+VIAddVersionKey "ProductName"    "Yuki"
+VIAddVersionKey "ProductVersion" "${VERSION}"
+VIAddVersionKey "FileVersion"    "${VERSION}"
+VIAddVersionKey "LegalCopyright" "NINYM"
 
 ;--------------------------------
 ; Variables

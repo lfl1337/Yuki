@@ -1,20 +1,30 @@
 @echo off
 chcp 65001 > nul
 
-for /f "delims=" %%v in ('python -c "from core.version_manager import get_current_version; print(get_current_version())"') do set YUKI_VERSION=%%v
+for /f "tokens=2 delims=:, " %%v in ('findstr "version" version.json') do (
+    set VERSION=%%~v
+    goto :found
+)
+:found
+set VERSION=%VERSION:"=%
 
 echo ============================================
-echo  Building Yuki v%YUKI_VERSION%
+echo  Building Yuki v%VERSION%
 echo ============================================
 
 set /p bump_choice=Bump version before build? [y/N]:
 if /i "%bump_choice%"=="y" (
     call version_bump.bat
-    for /f "delims=" %%v in ('python -c "from core.version_manager import get_current_version; print(get_current_version())"') do set YUKI_VERSION=%%v
-    echo Updated to v%YUKI_VERSION%
+    for /f "tokens=2 delims=:, " %%v in ('findstr "version" version.json') do (
+        set VERSION=%%~v
+        goto :found2
+    )
+    :found2
+    set VERSION=%VERSION:"=%
+    echo Updated to v%VERSION%
 )
 
-echo [1/3] Installing dependencies...
+echo [1/4] Installing dependencies...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo ERROR: pip install failed
@@ -22,7 +32,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [2/3] Building with PyInstaller...
+echo [2/4] Building with PyInstaller...
 pyinstaller ^
   --name Yuki ^
   --icon assets\icon.ico ^
@@ -56,18 +66,13 @@ if %errorlevel% neq 0 (
 )
 
 echo [3/4] Building installer...
-where makensis >nul 2>&1
+"C:\Program Files (x86)\NSIS\makensis.exe" /DVERSION=%VERSION% installer.nsi
 if %errorlevel% neq 0 (
-    echo SKIP: makensis not found, skipping installer build
-) else (
-    makensis /DVERSION=%YUKI_VERSION% installer.nsi
-    if %errorlevel% neq 0 (
-        echo ERROR: makensis failed
-        pause
-        exit /b 1
-    )
-    echo Installer: Yuki_Setup_%YUKI_VERSION%.exe
+    echo ERROR: makensis failed
+    pause
+    exit /b 1
 )
+echo Installer: Yuki_Setup_%VERSION%.exe
 
 echo [4/4] Build complete!
 echo Output: dist\Yuki\Yuki.exe
