@@ -77,14 +77,10 @@ class Updater:
         self._on_done = on_update_done or (lambda ok: None)
 
     def check_and_update(self, auto_update: bool = True):
-        """Start background check. If auto_update is True, install silently."""
-        thread = threading.Thread(
-            target=self._run,
-            args=(auto_update,),
-            daemon=True,
-            name="updater",
-        )
-        thread.start()
+        """Start background check after a 5s delay. If auto_update is True, install silently."""
+        t = threading.Timer(5.0, self._run, args=(auto_update,))
+        t.daemon = True
+        t.start()
 
     def manual_update(self):
         """Trigger a manual update in the background."""

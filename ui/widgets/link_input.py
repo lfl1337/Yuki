@@ -7,19 +7,15 @@ from typing import Callable, Optional
 
 import customtkinter as ctk
 
+from config import UI_COLORS
 from locales.translator import t
+
+C = UI_COLORS
 
 
 class LinkInput(ctk.CTkFrame):
     """
-    URL input widget with:
-    - Large entry field
-    - Paste button
-    - Clear button
-    - Visual feedback (border color for valid/invalid)
-    - Debounced on_change callback
-
-    on_change(url: str) is called 500ms after the user stops typing.
+    URL input widget with visual feedback and debounced on_change callback.
     """
 
     DEBOUNCE_MS = 500
@@ -46,9 +42,13 @@ class LinkInput(ctk.CTkFrame):
             self,
             textvariable=self._entry_var,
             placeholder_text=t("paste_link"),
-            height=44,
+            height=42,
             font=ctk.CTkFont(size=14),
             corner_radius=8,
+            fg_color=C["bg_elevated"],
+            border_color=C["border"],
+            border_width=1,
+            text_color=C["text_primary"],
         )
         self._entry.grid(row=0, column=0, padx=(0, 8), sticky="ew")
 
@@ -58,8 +58,10 @@ class LinkInput(ctk.CTkFrame):
         self._paste_btn = ctk.CTkButton(
             btn_frame,
             text=t("btn_paste"),
-            width=70,
-            height=44,
+            width=80,
+            height=42,
+            fg_color=C["accent"],
+            hover_color=C["accent_hover"],
             command=self._paste,
         )
         self._paste_btn.pack(side="left", padx=(0, 6))
@@ -67,10 +69,13 @@ class LinkInput(ctk.CTkFrame):
         self._clear_btn = ctk.CTkButton(
             btn_frame,
             text=t("btn_clear"),
-            width=70,
-            height=44,
-            fg_color="gray40",
-            hover_color="gray30",
+            width=60,
+            height=42,
+            fg_color=C["bg_elevated"],
+            hover_color=C["bg_elevated"],
+            text_color=C["text_secondary"],
+            border_width=1,
+            border_color=C["border"],
             command=self._clear,
         )
         self._clear_btn.pack(side="left")
@@ -105,15 +110,14 @@ class LinkInput(ctk.CTkFrame):
     def set_state(self, state: str):
         """state: 'normal', 'valid', 'invalid'"""
         color_map = {
-            "normal": ("gray50", "gray60"),
-            "valid": ("#2FA827", "#3DCC32"),
-            "invalid": ("#C0392B", "#E74C3C"),
+            "normal": C["border"],
+            "valid":  C["success"],
+            "invalid": C["error"],
         }
-        border_color = color_map.get(state, color_map["normal"])
+        border_color = color_map.get(state, C["border"])
         self._entry.configure(border_color=border_color)
 
     def refresh_text(self):
-        """Refresh placeholder text after language change."""
         self._entry.configure(placeholder_text=t("paste_link"))
         self._paste_btn.configure(text=t("btn_paste"))
         self._clear_btn.configure(text=t("btn_clear"))

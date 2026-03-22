@@ -13,6 +13,11 @@ import yt_dlp
 
 from config import FFMPEG_PATH, AUDIO_QUALITY_MAP, FORMAT_VIDEO
 
+
+class _DownloadCancelled(Exception):
+    """Sentinel raised by progress hook when cancel is requested."""
+    pass
+
 logger = logging.getLogger(__name__)
 
 
@@ -100,6 +105,8 @@ class Downloader:
                     {"key": "EmbedThumbnail"},
                 ],
                 "writethumbnail": True,
+                "prefer_ffmpeg": True,
+                "encoding": "utf-8",
             }
         )
         self._run_download(url, opts)
@@ -159,11 +166,13 @@ class Downloader:
             "quiet": True,
             "no_warnings": True,
             "addmetadata": True,
+            "windowsfilenames": True,
+            "overwrites": False,
         }
 
     def _progress_hook(self, d: dict):
         if self._cancel_event.is_set():
-            raise yt_dlp.utils.DownloadCancelled("Cancelled by user")
+            raise _DownloadCancelled("Cancelled by user")
 
         status = d.get("status")
         if status == "downloading":
@@ -191,7 +200,7 @@ class Downloader:
                     "filesize": info.get("filesize") or info.get("filesize_approx", 0),
                 }
                 self._completion_cb(filepath, metadata)
-        except yt_dlp.utils.DownloadCancelled:
+        except _DownloadCancelled:
             logger.info("Download cancelled by user")
         except yt_dlp.utils.DownloadError as exc:
             self._error_cb(str(exc))
@@ -249,7 +258,13 @@ class Downloader:
                 "--bitrate", f"{bitrate}k",
                 "--ffmpeg", str(FFMPEG_PATH),
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            env = os.environ.copy()
+            env["PYTHONIOENCODING"] = "utf-8"
+            result = subprocess.run(
+                cmd, capture_output=True, text=True,
+                encoding="utf-8", errors="replace",
+                timeout=300, env=env,
+            )
             if result.returncode != 0:
                 raise RuntimeError(result.stderr or "spotdl failed")
             self._completion_cb(str(output_dir), {"title": "Spotify download", "platform": "Spotify"})

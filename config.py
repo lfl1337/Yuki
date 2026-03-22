@@ -6,7 +6,26 @@ Global configuration, constants, and paths.
 from pathlib import Path
 
 APP_NAME = "Yuki"
-VERSION = "1.0.0"
+VERSION = "2.1.1"
+
+UI_COLORS = {
+    "bg_primary":    "#0D0D12",
+    "bg_secondary":  "#0A0A0F",
+    "bg_card":       "#161620",
+    "bg_elevated":   "#1C1C28",
+    "border":        "#222232",
+    "titlebar":      "#5B21B6",
+    "accent":        "#7C3AED",
+    "accent_hover":  "#8B5CF6",
+    "accent_soft":   "#2D1B69",
+    "success":       "#10B981",
+    "error":         "#EF4444",
+    "warning":       "#F59E0B",
+    "text_primary":  "#F0F0F0",
+    "text_secondary":"#8080A0",
+    "text_muted":    "#404060",
+}
+
 GITHUB_REPO = "lfl1337/Yuki"
 GITHUB_URL = f"https://github.com/{GITHUB_REPO}"
 
@@ -59,7 +78,7 @@ PLAYER_UPDATE_INTERVAL_MS = 500
 URL_DEBOUNCE_MS = 500
 THUMBNAIL_SIZE = (150, 150)
 COVER_ART_SIZE = (300, 300)
-PLAYER_COVER_SIZE = (50, 50)
+PLAYER_COVER_SIZE = (48, 48)
 QUEUE_THUMB_SIZE = (60, 60)
 
 DEFAULT_SETTINGS = {
@@ -72,9 +91,10 @@ DEFAULT_SETTINGS = {
     "default_video_quality": "best",
     "default_audio_quality": "320kbps",
     "default_format": "audio",
-    "window_width": 1100,
-    "window_height": 700,
+    "window_width": 1280,
+    "window_height": 780,
     "volume": 0.8,
+    "autoload_last_download": False,
 }
 
 # Video format string for yt-dlp
@@ -87,6 +107,8 @@ FORMAT_VIDEO = {
 }
 
 # Audio bitrate for yt-dlp postprocessor
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
 AUDIO_QUALITY_MAP = {
     "best": "0",
     "320kbps": "320",

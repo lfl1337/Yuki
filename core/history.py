@@ -47,6 +47,21 @@ class HistoryManager:
         with self._lock:
             return self._entries[:n]
 
+    AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".opus"}
+
+    def get_recent_audio(self, n: int) -> List[dict]:
+        """Return most recent n history entries that are audio files."""
+        with self._lock:
+            results = []
+            for e in self._entries:
+                fp = e.get("filepath", "")
+                fmt = e.get("format", "").lower()
+                if fmt in ("audio", "mp3") or Path(fp).suffix.lower() in self.AUDIO_EXTENSIONS:
+                    results.append(e)
+                if len(results) >= n:
+                    break
+            return results
+
     def delete(self, entry_id: str):
         with self._lock:
             self._entries = [e for e in self._entries if e.get("id") != entry_id]
