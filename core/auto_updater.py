@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import uuid
 from pathlib import Path
 
 import requests
@@ -77,7 +78,15 @@ class AutoUpdater:
                 return
 
             download_url = setup_asset["browser_download_url"]
-            installer_path = Path(tempfile.gettempdir()) / "Yuki_Update.exe"
+
+            # Clean up any leftover update files from previous failed attempts
+            for old in Path(tempfile.gettempdir()).glob("Yuki_Update_*.exe"):
+                try:
+                    old.unlink()
+                except Exception:
+                    pass
+
+            installer_path = Path(tempfile.gettempdir()) / f"Yuki_Update_{uuid.uuid4().hex[:8]}.exe"
 
             # Download silently — no progress, no dialog, no toast
             try:
