@@ -211,15 +211,15 @@ class Downloader:
     def _resolve_output_path(self, opts: dict, info: dict) -> str:
         """Try to determine the actual output filepath after download."""
         if self._current_filepath:
-            # Strip any .part suffix if present
             fp = self._current_filepath
             if fp.endswith(".part"):
                 fp = fp[:-5]
-            return fp
+            return str(Path(fp).resolve())
         # Fallback: reconstruct from template
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
-                return ydl.prepare_filename(info)
+                fp = ydl.prepare_filename(info)
+                return str(Path(fp).resolve())
         except Exception:
             return ""
 

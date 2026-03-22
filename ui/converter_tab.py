@@ -684,7 +684,11 @@ class ConverterTab(ctk.CTkFrame):
                 str(FFPROBE_PATH), "-v", "quiet", "-print_format", "json",
                 "-show_format", path,
             ]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            result = subprocess.run(
+                cmd, capture_output=True,
+                encoding="utf-8", errors="replace",
+                timeout=30, creationflags=subprocess.CREATE_NO_WINDOW,
+            )
             data = json.loads(result.stdout)
             return float(data.get("format", {}).get("duration", 0))
         except Exception:

@@ -2,8 +2,10 @@
 History tab — card list with search, filter pills, and action buttons.
 """
 
+import io
 import os
 import subprocess
+import threading
 from pathlib import Path
 from tkinter import filedialog
 from typing import Callable, List, Optional
@@ -37,28 +39,38 @@ def _fmt_duration(seconds: int) -> str:
     return f"{m}:{s:02d}"
 
 
-def _badge(parent, text, bg, fg):
-    return ctk.CTkLabel(
-        parent, text=text, fg_color=bg, text_color=fg,
-        corner_radius=4, padx=6, pady=1, font=ctk.CTkFont(size=9),
-    )
+def _load_thumb_async(url: str, label: ctk.CTkLabel):
+    """Fetch thumbnail in background, update label on success."""
+    def _worker():
+        try:
+            import requests
+            from PIL import Image
+            resp = requests.get(url, timeout=8)
+            resp.raise_for_status()
+            img = Image.open(io.BytesIO(resp.content)).convert("RGB")
+            img = img.resize((72, 72), Image.LANCZOS)
+            ctk_img = ctk.CTkImage(img, size=(72, 72))
+            label.after(0, lambda: label.configure(image=ctk_img, text=""))
+        except Exception:
+            pass  # keep placeholder silently
+    threading.Thread(target=_worker, daemon=True).start()
 
 
 PLATFORM_BADGE_COLORS = {
-    "YouTube":          ("#2D0A0A", "#FF4444"),
-    "YouTube Shorts":   ("#2D0A0A", "#FF4444"),
-    "YouTube Playlist": ("#2D0A0A", "#FF4444"),
-    "Spotify":          ("#0A1F12", "#1DB954"),
-    "TikTok":           (C["bg_elevated"], C["text_secondary"]),
-    "SoundCloud":       ("#2D1500", "#FF5500"),
-    "Instagram":        ("#2D0D1F", "#C13584"),
-    "Twitter/X":        ("#0A1928", "#1DA1F2"),
+    "YouTube":          ("#EF4444", "#FFFFFF"),
+    "YouTube Shorts":   ("#EF4444", "#FFFFFF"),
+    "YouTube Playlist": ("#EF4444", "#FFFFFF"),
+    "Spotify":          ("#1DB954", "#FFFFFF"),
+    "TikTok":           ("#333333", C["text_secondary"]),
+    "SoundCloud":       ("#FF5500", "#FFFFFF"),
+    "Instagram":        ("#C13584", "#FFFFFF"),
+    "Twitter/X":        ("#1DA1F2", "#FFFFFF"),
 }
 
-
-def _platform_badge_colors(platform: str):
-    return PLATFORM_BADGE_COLORS.get(platform, (C["accent_soft"], C["accent"]))
-
+FORMAT_BADGE_COLORS = {
+    "mp3": (C["accent"], "#FFFFFF"),
+    "mp4": ("#2563EB", "#FFFFFF"),
+}
 
 FILTER_OPTIONS = ["All", "Video", "Audio", "YouTube", "Spotify", "TikTok"]
 
@@ -74,81 +86,94 @@ class HistoryCard(ctk.CTkFrame):
         on_delete: Callable,
         **kwargs,
     ):
-        super().__init__(master, corner_radius=10, fg_color=C["bg_card"], **kwargs)
+        super().__init__(master, corner_radius=12, fg_color=C["bg_card"], **kwargs)
         self._entry = entry
         self.columnconfigure(1, weight=1)
 
-        # Thumbnail placeholder
+        # col 0: thumbnail placeholder (72×72)
         thumb = ctk.CTkLabel(
-            self, text="🎵",
+            self, text="",
             width=72, height=72,
-            font=ctk.CTkFont(size=28),
             fg_color=C["bg_elevated"],
             corner_radius=6,
         )
-        thumb.grid(row=0, column=0, rowspan=3, padx=12, pady=10, sticky="n")
+        thumb.grid(row=0, column=0, rowspan=3, padx=(16, 12), pady=10, sticky="ns")
 
-        # Title
+        thumbnail_url = entry.get("thumbnail_url", "")
+        if thumbnail_url:
+            _load_thumb_async(thumbnail_url, thumb)
+
+        # col 1, row 0: title
         title = entry.get("title", "")
-        if len(title) > 50:
-            title = title[:50] + "…"
+        if len(title) > 55:
+            title = title[:55] + "…"
         ctk.CTkLabel(
             self,
             text=title,
             font=ctk.CTkFont(size=13, weight="bold"),
             text_color=C["text_primary"],
             anchor="w",
-        ).grid(row=0, column=1, padx=4, pady=(10, 1), sticky="w")
+        ).grid(row=0, column=1, padx=(0, 4), pady=(10, 1), sticky="w")
 
-        # Artist
+        # col 1, row 1: artist
+        artist = entry.get("artist", "")
+        if len(artist) > 40:
+            artist = artist[:40] + "…"
         ctk.CTkLabel(
             self,
-            text=entry.get("artist", ""),
+            text=artist,
             font=ctk.CTkFont(size=11),
             text_color=C["text_secondary"],
             anchor="w",
-        ).grid(row=1, column=1, padx=4, pady=0, sticky="w")
+        ).grid(row=1, column=1, padx=(0, 4), pady=0, sticky="w")
 
-        # Badge row
+        # col 1, row 2: badge row
         badge_row = ctk.CTkFrame(self, fg_color="transparent")
-        badge_row.grid(row=2, column=1, padx=4, pady=(2, 10), sticky="w")
+        badge_row.grid(row=2, column=1, padx=0, pady=(2, 10), sticky="w")
 
         platform = entry.get("platform", "")
         if platform:
-            bg, fg = _platform_badge_colors(platform)
-            _badge(badge_row, platform, bg, fg).pack(side="left", padx=(0, 4))
+            bg, fg = PLATFORM_BADGE_COLORS.get(platform, (C["bg_elevated"], C["text_secondary"]))
+            ctk.CTkLabel(
+                badge_row, text=platform, fg_color=bg, text_color=fg,
+                corner_radius=6, padx=8, pady=2, font=ctk.CTkFont(size=10),
+            ).pack(side="left", padx=(0, 4))
 
-        fmt = entry.get("format", "")
+        fmt = entry.get("format", "").lower()
         if fmt:
-            _badge(badge_row, fmt.upper(), C["bg_elevated"], C["text_secondary"]).pack(side="left", padx=(0, 4))
+            fmt_bg, fmt_fg = FORMAT_BADGE_COLORS.get(fmt, (C["bg_elevated"], C["text_secondary"]))
+            ctk.CTkLabel(
+                badge_row, text=fmt.upper(), fg_color=fmt_bg, text_color=fmt_fg,
+                corner_radius=6, padx=8, pady=2, font=ctk.CTkFont(size=10),
+            ).pack(side="left", padx=(0, 4))
 
         date = entry.get("downloaded_at", "")
         if date:
             ctk.CTkLabel(
                 badge_row, text=date[:10],
-                font=ctk.CTkFont(size=10),
+                font=ctk.CTkFont(size=11),
                 text_color=C["text_muted"],
             ).pack(side="left", padx=(4, 0))
 
-        # Action buttons
+        # col 2: action buttons
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.grid(row=0, column=2, rowspan=3, padx=10, pady=8, sticky="e")
+        btn_frame.grid(row=0, column=2, rowspan=3, padx=(12, 16), pady=8, sticky="ns")
 
-        for icon, cmd in [
-            ("▶", lambda: on_play(entry)),
-            ("✏", lambda: on_edit(entry)),
-            ("📁", lambda: on_open_folder(entry)),
-            ("🗑", lambda: on_delete(entry)),
+        for icon, cmd, hover in [
+            ("▶", lambda e=entry: on_play(e), C["accent_hover"]),
+            ("✏", lambda e=entry: on_edit(e), C["accent_hover"]),
+            ("📁", lambda e=entry: on_open_folder(e), C["accent_hover"]),
+            ("🗑", lambda e=entry: on_delete(e), C["error"]),
         ]:
             ctk.CTkButton(
                 btn_frame, text=icon,
-                width=28, height=28,
-                fg_color="transparent",
-                hover_color=C["bg_elevated"],
+                width=32, height=32,
+                corner_radius=8,
+                fg_color=C["bg_elevated"],
+                hover_color=hover,
                 text_color=C["text_secondary"],
-                font=ctk.CTkFont(size=14),
                 command=cmd,
-            ).pack(pady=2)
+            ).pack(pady=4)
 
 
 class HistoryTab(ctk.CTkFrame):
@@ -157,13 +182,13 @@ class HistoryTab(ctk.CTkFrame):
         master,
         history_manager: HistoryManager,
         on_play: Optional[Callable] = None,
-        on_edit: Optional[Callable] = None,
+        on_edit_tags: Optional[Callable] = None,
         **kwargs,
     ):
         super().__init__(master, fg_color=C["bg_primary"], **kwargs)
         self._history = history_manager
         self._on_play = on_play or (lambda e: None)
-        self._on_edit = on_edit or (lambda e: None)
+        self._on_edit_tags = on_edit_tags or (lambda fp: None)
         self._entry_widgets: List[HistoryCard] = []
         self._filter_platform: str = "All"
         self._search_job: Optional[str] = None
@@ -340,7 +365,13 @@ class HistoryTab(ctk.CTkFrame):
             self._on_play(entry)
 
     def _edit(self, entry: dict):
-        self._on_edit(entry)
+        filepath = entry.get("filepath", "")
+        if filepath and not Path(filepath).exists():
+            filename = Path(filepath).name
+            fallback = Path.home() / "Downloads" / "Yuki" / filename
+            if fallback.exists():
+                filepath = str(fallback)
+        self._on_edit_tags(filepath)
 
     def _open_folder(self, entry: dict):
         filepath = entry.get("filepath", "")
