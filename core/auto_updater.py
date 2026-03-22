@@ -109,7 +109,7 @@ class AutoUpdater:
                 "taskkill /f /im Yuki.exe >nul 2>&1\r\n"
                 f'start "" "{exe}" /S\r\n'
                 "timeout /t 5 /nobreak >nul\r\n"
-                f'start "" "{current_exe}"\r\n'
+                f'start "" "{current_exe}" --updated\r\n'
                 "exit\r\n"
             )
             bat_path.write_text(bat_content, encoding="utf-8")

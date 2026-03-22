@@ -91,7 +91,15 @@ class LogViewer(ctk.CTkToplevel):
             text_color=C["text_secondary"], hover_color=C["bg_elevated"],
             font=ctk.CTkFont(size=10),
             command=self._open_in_notepad,
-        ).grid(row=0, column=2, padx=(0, 8), pady=4)
+        ).grid(row=0, column=2, padx=(0, 4), pady=4)
+
+        ctk.CTkButton(
+            info_bar, text="Open in Explorer", width=120, height=22,
+            fg_color="transparent", border_width=1, border_color=C["border"],
+            text_color=C["text_secondary"], hover_color=C["bg_elevated"],
+            font=ctk.CTkFont(size=10),
+            command=self._open_in_explorer,
+        ).grid(row=0, column=3, padx=(0, 8), pady=4)
 
         self._update_file_info()
 
@@ -339,6 +347,19 @@ class LogViewer(ctk.CTkToplevel):
             if path and Path(path).exists():
                 subprocess.Popen(
                     ["notepad.exe", str(path)],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+        except Exception:
+            pass
+
+    def _open_in_explorer(self):
+        try:
+            from core import logger as app_logger
+            path = app_logger.get_log_file_path()
+            if path:
+                folder = str(Path(path).parent.resolve())
+                subprocess.Popen(
+                    ["explorer", folder],
                     creationflags=subprocess.CREATE_NO_WINDOW,
                 )
         except Exception:

@@ -38,7 +38,10 @@ def ensure_single_instance():
     return mutex  # keep reference alive — OS releases when process exits
 
 
-_mutex = ensure_single_instance()
+# Skip single-instance check when the auto-updater restarts the app
+# after installing an update — the old instance may not have released
+# the mutex yet when the new instance starts.
+_mutex = None if "--updated" in sys.argv else ensure_single_instance()
 
 import json
 import logging
