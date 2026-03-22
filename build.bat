@@ -55,7 +55,21 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [3/3] Build complete!
+echo [3/4] Building installer...
+where makensis >nul 2>&1
+if %errorlevel% neq 0 (
+    echo SKIP: makensis not found, skipping installer build
+) else (
+    makensis /DVERSION=%YUKI_VERSION% installer.nsi
+    if %errorlevel% neq 0 (
+        echo ERROR: makensis failed
+        pause
+        exit /b 1
+    )
+    echo Installer: Yuki_Setup_%YUKI_VERSION%.exe
+)
+
+echo [4/4] Build complete!
 echo Output: dist\Yuki\Yuki.exe
 echo ============================================
 

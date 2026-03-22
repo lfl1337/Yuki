@@ -413,7 +413,7 @@ class HistoryTab(ctk.CTkFrame):
                 Path(raw_dir).resolve() if raw_dir
                 else (Path.home() / "Downloads" / "Yuki").resolve()
             )
-        subprocess.Popen(["explorer", folder])
+        subprocess.Popen(["explorer", folder], creationflags=subprocess.CREATE_NO_WINDOW)
 
     def _delete(self, entry: dict):
         self._history.delete(entry.get("id", ""))

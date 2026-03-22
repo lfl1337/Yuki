@@ -5,27 +5,34 @@ Entry point: loads settings, generates assets, launches the main window.
 
 import sys
 import os
-import tempfile
-import msvcrt
+
+# Suppress console output when running as a windowed exe (PyInstaller --windowed)
+if sys.platform == "win32" and not sys.stdout:
+    sys.stdout = open(os.devnull, "w")
+    sys.stderr = open(os.devnull, "w")
+
+import ctypes
+import ctypes.wintypes
 
 
 def ensure_single_instance():
-    lock_file = os.path.join(tempfile.gettempdir(), "yuki.lock")
-    try:
-        fp = open(lock_file, "w")
-        msvcrt.locking(fp.fileno(), msvcrt.LK_NBLCK, 1)
-        return fp  # keep reference alive — lock released when process exits
-    except (IOError, OSError):
+    mutex_name = "YukiMediaSuite_SingleInstance_Mutex"
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    mutex = kernel32.CreateMutexW(None, False, mutex_name)
+    last_error = ctypes.get_last_error()
+    if last_error == 183:  # ERROR_ALREADY_EXISTS
         import tkinter as tk
         from tkinter import messagebox
         root = tk.Tk()
         root.withdraw()
         messagebox.showinfo("Yuki", "Yuki is already running.")
         root.destroy()
+        ctypes.windll.kernel32.CloseHandle(mutex)
         sys.exit(0)
+    return mutex  # keep reference alive — mutex released when process exits
 
 
-_lock = ensure_single_instance()  # module-level so it stays alive for the process lifetime
+_mutex = ensure_single_instance()  # module-level so it stays alive for the process lifetime
 
 import json
 import logging

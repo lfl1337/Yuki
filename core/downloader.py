@@ -285,6 +285,7 @@ class Downloader:
                 cmd, capture_output=True, text=True,
                 encoding="utf-8", errors="replace",
                 timeout=300, env=env,
+                creationflags=subprocess.CREATE_NO_WINDOW,
             )
             if result.returncode != 0:
                 raise RuntimeError(result.stderr or "spotdl failed")

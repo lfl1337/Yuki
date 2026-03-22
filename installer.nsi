@@ -6,9 +6,12 @@
 
 ;--------------------------------
 ; General
-!define PRODUCT_VERSION "1.0.0"
+; VERSION can be injected at compile time: makensis /DVERSION=1.2.3 installer.nsi
+!ifndef VERSION
+  !define VERSION "0.0.0"
+!endif
 Name "Yuki"
-OutFile "Yuki_Setup_${PRODUCT_VERSION}.exe"
+OutFile "Yuki_Setup_${VERSION}.exe"
 Unicode True
 InstallDir "$PROGRAMFILES64\Yuki"
 InstallDirRegKey HKCU "Software\Yuki" "InstallDir"
@@ -74,7 +77,7 @@ Section "Yuki Media Suite" SecMain
 
     ; Write install dir to registry
     WriteRegStr HKCU "Software\Yuki" "InstallDir" "$INSTDIR"
-    WriteRegStr HKCU "Software\Yuki" "Version" "${PRODUCT_VERSION}"
+    WriteRegStr HKCU "Software\Yuki" "Version" "${VERSION}"
 
     ; Start Menu shortcuts
     !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
@@ -92,7 +95,7 @@ Section "Yuki Media Suite" SecMain
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Yuki" \
         "UninstallString" '"$INSTDIR\Uninstall.exe"'
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Yuki" \
-        "DisplayVersion" "${PRODUCT_VERSION}"
+        "DisplayVersion" "${VERSION}"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Yuki" \
         "Publisher" "NINYM"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Yuki" \
