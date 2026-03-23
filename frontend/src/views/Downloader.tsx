@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { downloadApi } from '../api/download'
+import { getStreamUrl } from '../api/client'
 import PreviewCard from '../components/PreviewCard'
 import QueueItem from '../components/QueueItem'
 import { Clipboard, X, Plus, Download, Folder } from 'lucide-react'
@@ -63,7 +64,7 @@ export default function Downloader() {
   useEffect(() => {
     const connect = () => {
       if (esRef.current) esRef.current.close()
-      const es = new EventSource('/api/v1/download/stream')
+      const es = new EventSource(getStreamUrl('/api/v1/download/stream'))
       es.onmessage = (e) => {
         try {
           const data: DownloadJob[] = JSON.parse(e.data)
