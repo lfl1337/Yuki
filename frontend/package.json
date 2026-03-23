@@ -1,0 +1,40 @@
+{
+  "name": "yuki-frontend",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:backend": "cd ../backend && uv run python run.py",
+    "dev:frontend": "tauri dev",
+    "dev": "concurrently --kill-others-on-fail \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "vite": "vite",
+    "build": "tauri build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.6.0",
+    "@tauri-apps/plugin-shell": "^2",
+    "i18next": "^23",
+    "lucide-react": "^0.408.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-i18next": "^14",
+    "react-router-dom": "^6",
+    "zustand": "^4"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4",
+    "autoprefixer": "^10",
+    "concurrently": "^8",
+    "eslint": "^8",
+    "postcss": "^8",
+    "tailwindcss": "^3",
+    "typescript": "^5",
+    "vite": "^5"
+  }
+}
