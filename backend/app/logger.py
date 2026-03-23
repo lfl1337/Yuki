@@ -68,7 +68,8 @@ def setup_logging(log_file: Path) -> None:
 
     # Silence noisy libraries
     for noisy in ("PIL", "urllib3", "requests", "yt_dlp", "spotdl",
-                  "httpx", "httpcore", "multipart"):
+                  "httpx", "httpcore", "multipart",
+                  "sse_starlette", "sse_starlette.sse"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
