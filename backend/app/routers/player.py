@@ -25,6 +25,8 @@ async def load(body: PlayerLoadRequest):
         raise HTTPException(404, f"File not found: {body.filepath}")
     try:
         await asyncio.to_thread(_get().load, body.filepath)
+        # Warm the tag cache immediately so SSE never reads from disk
+        await asyncio.to_thread(player_svc.notify_loaded, body.filepath)
         return {"ok": True}
     except Exception as exc:
         raise HTTPException(400, str(exc))
