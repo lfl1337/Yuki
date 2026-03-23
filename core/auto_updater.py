@@ -78,6 +78,9 @@ class AutoUpdater:
                 return
 
             download_url = setup_asset["browser_download_url"]
+            if not isinstance(download_url, str) or not download_url.startswith("https://"):
+                logger.warning("Update: download URL is not HTTPS, skipping: %s", download_url)
+                return
 
             # Clean up any leftover update files from previous failed attempts
             for old in Path(tempfile.gettempdir()).glob("Yuki_Update_*.exe"):
@@ -108,7 +111,7 @@ class AutoUpdater:
 
     def _launch_installer(self, installer_path: Path):
         try:
-            bat_path = Path(tempfile.gettempdir()) / "yuki_update_helper.bat"
+            bat_path = Path(tempfile.gettempdir()) / f"yuki_update_{uuid.uuid4().hex[:8]}.bat"
             exe = str(installer_path)
             current_exe = sys.executable
 

@@ -328,7 +328,7 @@ class MP3Tagger:
     def _load_image_bytes(self, source: Union[str, Path]) -> tuple:
         """Returns (bytes, mime_type) or (None, None)."""
         try:
-            if isinstance(source, str) and source.startswith("http"):
+            if isinstance(source, str) and source.lower().startswith("https://"):
                 resp = requests.get(source, timeout=10)
                 resp.raise_for_status()
                 data = resp.content
