@@ -20,7 +20,7 @@ export default function PlayerBar() {
   const esRef = useRef<EventSource | null>(null)
   const seekingRef = useRef(false)
 
-  // SSE connection
+  // SSE connection — maps snake_case backend keys to camelCase store keys
   useEffect(() => {
     if (!backendOnline) return
 
@@ -29,8 +29,18 @@ export default function PlayerBar() {
       const es = new EventSource('/api/v1/player/stream')
       es.onmessage = (e) => {
         try {
-          const data = JSON.parse(e.data)
-          setPlayerState(data)
+          const raw = JSON.parse(e.data)
+          setPlayerState({
+            isPlaying: raw.is_playing,
+            isPaused: raw.is_paused,
+            position: raw.position,
+            duration: raw.duration,
+            volume: raw.volume,
+            filepath: raw.filepath,
+            title: raw.title,
+            artist: raw.artist,
+            coverArt: raw.cover_art_b64 ?? null,
+          })
         } catch {}
       }
       es.onerror = () => {
@@ -45,12 +55,12 @@ export default function PlayerBar() {
   }, [backendOnline, setPlayerState])
 
   const handlePlayPause = useCallback(async () => {
-    if (playerState.isPlaying && !playerState.isPaused) {
+    if (playerState.isPlaying) {
       await playerApi.pause()
     } else {
       await playerApi.play()
     }
-  }, [playerState.isPlaying, playerState.isPaused])
+  }, [playerState.isPlaying])
 
   const handleSeek = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     seekingRef.current = false
@@ -76,7 +86,7 @@ export default function PlayerBar() {
   }, [navigate, playerState.filepath])
 
   const isActive = playerState.filepath !== ''
-  const isPlaying = playerState.isPlaying && !playerState.isPaused
+  const isPlaying = playerState.isPlaying
 
   return (
     <div className="h-[72px] flex-shrink-0 bg-bg-secondary border-t border-border flex items-center px-4 gap-4">
