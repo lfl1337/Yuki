@@ -1,0 +1,32 @@
+[project]
+name = "yuki-backend"
+version = "2.0.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.29.0",
+    "sse-starlette>=2.1.0",
+    "sqlalchemy[asyncio]>=2.0.0",
+    "aiosqlite>=0.20.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
+    "slowapi>=0.1.9",
+    "yt-dlp>=2024.1.0",
+    "spotdl>=4.2.0",
+    "mutagen>=1.47.0",
+    "Pillow>=10.0.0",
+    "pygame>=2.5.0",
+    "requests>=2.31.0",
+    "packaging>=23.0",
+    "darkdetect",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
