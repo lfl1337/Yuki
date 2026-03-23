@@ -38,8 +38,8 @@ fn get_runtime_port_path(app: &AppHandle) -> PathBuf {
             .path()
             .app_data_dir()
             .unwrap_or_else(|_| PathBuf::from("."));
-        // .runtime_port is written next to the sidecar binary
-        // The sidecar writes it in its working dir (AppData/Yuki)
+        // The backend writes .runtime_port to the data_dir it receives
+        // via --data-dir, which is exactly app_data_dir().
         data_dir.join(".runtime_port")
     }
 }
@@ -61,6 +61,15 @@ pub fn run() {
                     .app_data_dir()
                     .unwrap_or_else(|_| PathBuf::from("."));
                 let data_dir_str = data_dir.to_string_lossy().to_string();
+
+                // Kill any leftover backend from a previous crashed session.
+                let _ = std::process::Command::new("taskkill")
+                    .args(["/f", "/im", "yuki-backend-x86_64-pc-windows-msvc.exe"])
+                    .output();
+
+                // Delete stale .runtime_port so the poll below waits for the
+                // freshly-started backend rather than picking up an old value.
+                let _ = std::fs::remove_file(&runtime_port_path);
 
                 // Open log file
                 let log_path = data_dir.join("yuki-tauri.log");
@@ -99,21 +108,23 @@ pub fn run() {
                 });
             }
 
-            // Health-check thread: poll .runtime_port for up to 10s,
+            // Health-check thread: poll .runtime_port for up to 15s (150×100ms),
             // then emit the discovered port + ready signal to the frontend.
             let rp = runtime_port_path.clone();
             let ah = app_handle.clone();
             std::thread::spawn(move || {
-                for _ in 0..20 {
-                    std::thread::sleep(Duration::from_millis(500));
+                for _ in 0..150 {
+                    std::thread::sleep(Duration::from_millis(100));
                     if rp.exists() {
                         let port = std::fs::read_to_string(&rp)
                             .unwrap_or_default()
                             .trim()
                             .to_string();
-                        let _ = ah.emit("backend-port", port);
-                        let _ = ah.emit("backend-ready", ());
-                        return;
+                        if !port.is_empty() {
+                            let _ = ah.emit("backend-port", port);
+                            let _ = ah.emit("backend-ready", ());
+                            return;
+                        }
                     }
                 }
                 // Timeout: fall back to default port so UI doesn't hang forever
