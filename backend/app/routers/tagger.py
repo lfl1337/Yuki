@@ -10,7 +10,8 @@ from fastapi import APIRouter, HTTPException
 
 from ..schemas import (
     TaggerReadRequest, TagsRead, TagsWriteRequest,
-    CoverFromUrlRequest, RenameRequest, AutoNameRequest
+    CoverFromUrlRequest, RenameRequest, AutoNameRequest,
+    BatchSaveRequest, BatchSaveResult,
 )
 from ..services.tagger import MP3Tagger
 
@@ -94,6 +95,19 @@ async def write_tags(body: TagsWriteRequest):
             finally:
                 Path(tmp_path).unlink(missing_ok=True)
         return {"ok": True}
+    except Exception as exc:
+        raise HTTPException(400, str(exc))
+
+
+@router.post("/batch-save", response_model=BatchSaveResult)
+async def batch_save(body: BatchSaveRequest):
+    if not body.filepaths:
+        raise HTTPException(400, "No files provided")
+    try:
+        result = await asyncio.to_thread(
+            _tagger.batch_write_tags, body.filepaths, body.tags
+        )
+        return BatchSaveResult(**result)
     except Exception as exc:
         raise HTTPException(400, str(exc))
 

@@ -7,20 +7,23 @@ export default {
       colors: {
         accent: {
           DEFAULT: "#7C6FCD",
-          hover: "#9080D8",
-          soft: "#2D2550",
+          hover:   "#9080D8",
+          soft:    "#2D2550",
         },
         bg: {
-          primary: "#09090b",
-          secondary: "#18181b",
-          card: "#27272a",
-          elevated: "#3f3f46",
+          primary:   'var(--bg-primary)',
+          secondary: 'var(--bg-secondary)',
+          card:      'var(--bg-card)',
+          elevated:  'var(--bg-elevated)',
         },
-        border: "#52525b",
+        border:  'var(--border)',
+        text1:   'var(--text-1)',
+        text2:   'var(--text-2)',
+        text3:   'var(--text-3)',
         success: "#10B981",
-        error: "#EF4444",
+        error:   "#EF4444",
         warning: "#F59E0B",
-        muted: "#71717a",
+        muted:   'var(--text-3)',
       },
       fontFamily: {
         sans: [

@@ -32,7 +32,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   soundcloud: 'bg-orange-500/20 text-orange-400',
   tiktok: 'bg-pink-500/20 text-pink-400',
   twitter: 'bg-sky-500/20 text-sky-400',
-  default: 'bg-zinc-500/20 text-zinc-400',
+  default: 'bg-bg-elevated/60 text-text2',
 }
 
 function formatDuration(sec: number) {
@@ -85,7 +85,7 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
   }, [entry.id, onDeleted])
 
   return (
-    <div className="bg-bg-card rounded-xl border border-border overflow-hidden flex flex-col hover:border-zinc-500 transition-colors">
+    <div className="bg-bg-card rounded-xl border border-border overflow-hidden flex flex-col hover:border-border transition-colors">
       {/* Thumbnail */}
       <div className="relative h-[120px] bg-bg-elevated flex-shrink-0">
         {entry.thumbnail_url ? (
@@ -96,12 +96,12 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-700 text-3xl">
+          <div className="w-full h-full flex items-center justify-center text-text3 text-3xl">
             雪
           </div>
         )}
         {entry.duration > 0 && (
-          <span className="absolute bottom-1.5 right-2 text-xs bg-black/70 text-white px-1.5 py-0.5 rounded">
+          <span className="absolute bottom-1.5 right-2 text-xs bg-bg-primary/80 text-text1 px-1.5 py-0.5 rounded">
             {formatDuration(entry.duration)}
           </span>
         )}
@@ -120,23 +120,23 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
             {entry.format?.toUpperCase() || 'AUDIO'}
           </span>
           {entry.quality && (
-            <span className="text-xs px-1.5 py-0.5 rounded bg-zinc-700/60 text-zinc-400">
+            <span className="text-xs px-1.5 py-0.5 rounded bg-bg-elevated/80 text-text2">
               {entry.quality}
             </span>
           )}
         </div>
 
         <div>
-          <p className="text-sm font-medium text-white leading-snug line-clamp-2">
+          <p className="text-sm font-medium text-text1 leading-snug line-clamp-2">
             {entry.title || 'Unknown'}
           </p>
           {entry.artist && (
-            <p className="text-xs text-zinc-400 mt-0.5 truncate">{entry.artist}</p>
+            <p className="text-xs text-text2 mt-0.5 truncate">{entry.artist}</p>
           )}
         </div>
 
         <div className="flex items-center justify-between mt-auto">
-          <div className="text-xs text-zinc-600">
+          <div className="text-xs text-text3">
             {formatDate(entry.downloaded_at)}
             {entry.filesize ? ` · ${formatSize(entry.filesize)}` : ''}
           </div>
@@ -147,7 +147,7 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
           <button
             onClick={handlePlay}
             disabled={!entry.filepath}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg bg-accent/20 text-accent hover:bg-accent hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg bg-accent/20 text-accent hover:bg-accent hover:text-text1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <Play size={11} />
             Play
@@ -155,21 +155,21 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
           <button
             onClick={handleOpenFolder}
             disabled={!entry.filepath}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-zinc-400 hover:text-white hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-text2 hover:text-text1 hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <FolderOpen size={11} />
           </button>
           <button
             onClick={handleEdit}
             disabled={!entry.filepath}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-zinc-400 hover:text-white hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-text2 hover:text-text1 hover:bg-bg-elevated transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <Pencil size={11} />
             Edit
           </button>
           <button
             onClick={handleDelete}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-auto"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg text-text3 hover:text-red-400 hover:bg-red-500/10 transition-colors ml-auto"
           >
             <Trash2 size={11} />
           </button>

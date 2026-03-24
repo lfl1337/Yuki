@@ -170,12 +170,12 @@ const esRef = useRef<EventSource | null>(null)
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
           dragging
             ? 'border-accent bg-accent/10'
-            : 'border-border hover:border-zinc-500 hover:bg-bg-card'
+            : 'border-border hover:border-border hover:bg-bg-card'
         }`}
       >
-        <Upload size={28} className="mx-auto mb-3 text-zinc-500" />
-        <p className="text-sm text-white font-medium">{t('converter.drop_zone')}</p>
-        <p className="text-xs text-zinc-500 mt-1">{t('converter.drop_hint')}</p>
+        <Upload size={28} className="mx-auto mb-3 text-text3" />
+        <p className="text-sm text-text1 font-medium">{t('converter.drop_zone')}</p>
+        <p className="text-xs text-text3 mt-1">{t('converter.drop_hint')}</p>
       </div>
 
       {/* File List */}
@@ -186,10 +186,10 @@ const esRef = useRef<EventSource | null>(null)
               key={file.path}
               className="flex items-center gap-3 px-4 py-2.5 border-b border-border/50 last:border-b-0"
             >
-              <span className="flex-1 text-sm text-white truncate">{file.name}</span>
+              <span className="flex-1 text-sm text-text1 truncate">{file.name}</span>
               <button
                 onClick={() => removeFile(file.path)}
-                className="p-1 rounded text-zinc-500 hover:text-white hover:bg-bg-elevated transition-colors"
+                className="p-1 rounded text-text3 hover:text-text1 hover:bg-bg-elevated transition-colors"
               >
                 <X size={13} />
               </button>
@@ -202,7 +202,7 @@ const esRef = useRef<EventSource | null>(null)
       <div className="bg-bg-card rounded-xl border border-border p-4 flex flex-col gap-4">
         {/* Format */}
         <div>
-          <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+          <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
             {t('converter.output_format')}
           </label>
           <div className="flex flex-col gap-2">
@@ -213,8 +213,8 @@ const esRef = useRef<EventSource | null>(null)
                   onClick={() => setOutputFormat(f)}
                   className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase border transition-colors ${
                     outputFormat === f
-                      ? 'bg-accent border-accent text-white'
-                      : 'border-border text-zinc-400 hover:text-white hover:border-zinc-500'
+                      ? 'bg-accent border-accent text-text1'
+                      : 'border-border text-text2 hover:text-text1 hover:border-border'
                   }`}
                 >
                   {f}
@@ -228,8 +228,8 @@ const esRef = useRef<EventSource | null>(null)
                   onClick={() => setOutputFormat(f)}
                   className={`px-2.5 py-1 rounded-md text-xs font-mono uppercase border transition-colors ${
                     outputFormat === f
-                      ? 'bg-accent border-accent text-white'
-                      : 'border-border text-zinc-400 hover:text-white hover:border-zinc-500'
+                      ? 'bg-accent border-accent text-text1'
+                      : 'border-border text-text2 hover:text-text1 hover:border-border'
                   }`}
                 >
                   {f}
@@ -242,7 +242,7 @@ const esRef = useRef<EventSource | null>(null)
         {/* Quality */}
         {!isVideoFormat ? (
           <div>
-            <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+            <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
               {t('converter.audio_quality')}
             </label>
             <div className="flex gap-2">
@@ -252,8 +252,8 @@ const esRef = useRef<EventSource | null>(null)
                   onClick={() => setAudioQuality(q)}
                   className={`px-3 py-1 rounded-lg text-xs border transition-colors ${
                     audioQuality === q
-                      ? 'bg-accent border-accent text-white'
-                      : 'border-border text-zinc-400 hover:text-white'
+                      ? 'bg-accent border-accent text-text1'
+                      : 'border-border text-text2 hover:text-text1'
                   }`}
                 >
                   {q}
@@ -264,7 +264,7 @@ const esRef = useRef<EventSource | null>(null)
         ) : (
           <div className="flex gap-4">
             <div>
-              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
                 {t('converter.resolution')}
               </label>
               <div className="flex gap-2">
@@ -274,8 +274,8 @@ const esRef = useRef<EventSource | null>(null)
                     onClick={() => setVideoResolution(r)}
                     className={`px-3 py-1 rounded-lg text-xs border transition-colors ${
                       videoResolution === r
-                        ? 'bg-accent border-accent text-white'
-                        : 'border-border text-zinc-400 hover:text-white'
+                        ? 'bg-accent border-accent text-text1'
+                        : 'border-border text-text2 hover:text-text1'
                     }`}
                   >
                     {r}
@@ -284,7 +284,7 @@ const esRef = useRef<EventSource | null>(null)
               </div>
             </div>
             <div>
-              <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+              <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
                 {t('converter.codec')}
               </label>
               <div className="flex gap-2">
@@ -294,8 +294,8 @@ const esRef = useRef<EventSource | null>(null)
                     onClick={() => setVideoCodec(c)}
                     className={`px-3 py-1 rounded-lg text-xs border transition-colors ${
                       videoCodec === c
-                        ? 'bg-accent border-accent text-white'
-                        : 'border-border text-zinc-400 hover:text-white'
+                        ? 'bg-accent border-accent text-text1'
+                        : 'border-border text-text2 hover:text-text1'
                     }`}
                   >
                     {c}
@@ -308,7 +308,7 @@ const esRef = useRef<EventSource | null>(null)
 
         {/* Output folder */}
         <div>
-          <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+          <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
             {t('converter.output_folder')}
           </label>
           <div className="flex gap-2">
@@ -317,7 +317,7 @@ const esRef = useRef<EventSource | null>(null)
               value={outputDir}
               onChange={(e) => setOutputDir(e.target.value)}
               placeholder={t('converter.folder_placeholder')}
-              className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+              className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -328,7 +328,7 @@ const esRef = useRef<EventSource | null>(null)
                   patchSettings({ default_converter_dir: folder })
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-text2 hover:text-text1 transition-colors flex-shrink-0"
             >
               <Folder size={14} />
             </button>
@@ -337,7 +337,7 @@ const esRef = useRef<EventSource | null>(null)
 
         {/* Filename mode */}
         <div>
-          <label className="text-xs text-zinc-400 uppercase tracking-wide mb-2 block">
+          <label className="text-xs text-text2 uppercase tracking-wide mb-2 block">
             {t('converter.filename_mode')}
           </label>
           <div className="flex gap-2">
@@ -347,8 +347,8 @@ const esRef = useRef<EventSource | null>(null)
                 onClick={() => setFilenameMode(m)}
                 className={`px-3 py-1 rounded-lg text-xs border capitalize transition-colors ${
                   filenameMode === m
-                    ? 'bg-accent border-accent text-white'
-                    : 'border-border text-zinc-400 hover:text-white'
+                    ? 'bg-accent border-accent text-text1'
+                    : 'border-border text-text2 hover:text-text1'
                 }`}
               >
                 {t(`converter.filename_${m}`)}
@@ -365,7 +365,7 @@ const esRef = useRef<EventSource | null>(null)
             onChange={(e) => setCreateSubfolder(e.target.checked)}
             className="rounded border-border bg-bg-elevated accent-purple-500"
           />
-          <span className="text-sm text-zinc-300">{t('converter.create_subfolder')}</span>
+          <span className="text-sm text-text2">{t('converter.create_subfolder')}</span>
         </label>
       </div>
 
@@ -373,7 +373,7 @@ const esRef = useRef<EventSource | null>(null)
       <button
         onClick={handleConvert}
         disabled={files.length === 0}
-        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-accent hover:bg-accent-hover text-text1 font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Upload size={16} />
         {t('converter.convert_all')} ({files.length})
@@ -382,14 +382,14 @@ const esRef = useRef<EventSource | null>(null)
       {/* Progress */}
       {(activeJobs.length > 0 || finishedJobs.length > 0) && (
         <div className="bg-bg-card rounded-xl border border-border p-4">
-          <h3 className="text-sm font-medium text-white mb-3">{t('converter.progress')}</h3>
+          <h3 className="text-sm font-medium text-text1 mb-3">{t('converter.progress')}</h3>
           <div className="flex flex-col gap-2">
             {[...activeJobs, ...finishedJobs.slice(0, 5)].map((job) => (
               <div key={job.job_id} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">
+                  <p className="text-sm text-text1 truncate">
                     {job.input_path.replace(/\\/g, '/').split('/').pop()}
-                    <span className="text-zinc-500 ml-1">→ .{job.output_format}</span>
+                    <span className="text-text3 ml-1">→ .{job.output_format}</span>
                   </p>
                   {job.status !== 'done' && job.status !== 'error' && (
                     <div className="h-1 bg-bg-elevated rounded-full mt-1.5 overflow-hidden">
@@ -415,7 +415,7 @@ const esRef = useRef<EventSource | null>(null)
                 {!['done', 'error', 'cancelled'].includes(job.status) && (
                   <button
                     onClick={() => handleCancel(job.job_id)}
-                    className="p-1 rounded text-zinc-500 hover:text-white hover:bg-bg-elevated transition-colors flex-shrink-0"
+                    className="p-1 rounded text-text3 hover:text-text1 hover:bg-bg-elevated transition-colors flex-shrink-0"
                   >
                     <X size={13} />
                   </button>

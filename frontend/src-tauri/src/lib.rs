@@ -180,7 +180,7 @@ pub fn run() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
-                // Kill tracked sidecar child process
+                // Layer 1: kill stored child handle
                 if let Some(child) = window
                     .app_handle()
                     .state::<BackendProcess>()
@@ -191,8 +191,8 @@ pub fn run() {
                 {
                     let _ = child.kill();
                 }
-                // Taskkill as backup — production only, no console window
-                #[cfg(all(not(debug_assertions), target_os = "windows"))]
+                // Layer 2: taskkill backup — dev and release, no console window
+                #[cfg(target_os = "windows")]
                 {
                     use std::os::windows::process::CommandExt;
                     let _ = std::process::Command::new("taskkill")
@@ -202,6 +202,16 @@ pub fn run() {
                         .stderr(std::process::Stdio::null())
                         .spawn();
                 }
+                // Layer 3: delete port file so next launch is clean
+                let appdata = std::env::var("APPDATA").unwrap_or_default();
+                let _ = std::fs::remove_file(
+                    std::path::PathBuf::from(&appdata)
+                        .join("Yuki")
+                        .join(".runtime_port"),
+                );
+                // Give taskkill 500ms, then force exit
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                std::process::exit(0);
             }
         })
         .run(tauri::generate_context!())

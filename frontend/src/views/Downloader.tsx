@@ -154,7 +154,7 @@ export default function Downloader() {
     <div className="flex flex-col gap-4 p-6 max-w-2xl mx-auto">
       {/* URL Input Card */}
       <div className="bg-bg-card rounded-xl border border-border p-4">
-        <label className="text-sm font-medium text-white mb-2 block">
+        <label className="text-sm font-medium text-text1 mb-2 block">
           {t('downloader.url_label')}
         </label>
         <div className="flex gap-2">
@@ -165,12 +165,12 @@ export default function Downloader() {
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleDownload()}
               placeholder={t('downloader.url_placeholder')}
-              className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent pr-8"
+              className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2.5 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent pr-8"
             />
             {url && (
               <button
                 onClick={() => { setUrl(''); setDetected(null) }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text3 hover:text-text1"
               >
                 <X size={14} />
               </button>
@@ -178,19 +178,19 @@ export default function Downloader() {
           </div>
           <button
             onClick={handlePaste}
-            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-bg-elevated border border-border text-sm text-text2 hover:text-text1 transition-colors"
           >
             <Clipboard size={14} />
             {t('common.paste')}
           </button>
         </div>
         {detecting && (
-          <p className="text-xs text-zinc-500 mt-2">{t('downloader.detecting')}</p>
+          <p className="text-xs text-text3 mt-2">{t('downloader.detecting')}</p>
         )}
         {detected && (
           <div className="mt-1 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            <span className="text-xs text-zinc-400 capitalize">
+            <span className="text-xs text-text2 capitalize">
               {detected.platform} · {detected.type}
             </span>
           </div>
@@ -206,7 +206,7 @@ export default function Downloader() {
       <div className="bg-bg-card rounded-xl border border-border p-4 flex flex-col gap-3">
         {/* Format */}
         <div>
-          <label className="text-xs font-medium text-zinc-400 mb-1.5 block uppercase tracking-wide">
+          <label className="text-xs font-medium text-text2 mb-1.5 block uppercase tracking-wide">
             {t('downloader.format')}
           </label>
           <div className="flex gap-2">
@@ -216,8 +216,8 @@ export default function Downloader() {
                 onClick={() => setFormat(f)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
                   format === f
-                    ? 'bg-accent/20 border-accent text-white'
-                    : 'border-border text-zinc-400 hover:text-white hover:border-zinc-500'
+                    ? 'bg-accent/20 border-accent text-text1'
+                    : 'border-border text-text2 hover:text-text1 hover:border-border'
                 }`}
               >
                 {f === 'audio' ? '🎵' : '🎬'}
@@ -229,13 +229,13 @@ export default function Downloader() {
 
         {/* Quality */}
         <div>
-          <label className="text-xs font-medium text-zinc-400 mb-1.5 block uppercase tracking-wide">
+          <label className="text-xs font-medium text-text2 mb-1.5 block uppercase tracking-wide">
             {t('downloader.quality')}
           </label>
           <select
             value={quality}
             onChange={(e) => setQuality(e.target.value)}
-            className="bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+            className="bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text1 focus:outline-none focus:border-accent"
           >
             {(format === 'audio' ? AUDIO_QUALITIES : VIDEO_QUALITIES).map((q) => (
               <option key={q} value={q}>
@@ -247,7 +247,7 @@ export default function Downloader() {
 
         {/* Folder */}
         <div>
-          <label className="text-xs font-medium text-zinc-400 mb-1.5 block uppercase tracking-wide">
+          <label className="text-xs font-medium text-text2 mb-1.5 block uppercase tracking-wide">
             {t('downloader.output_folder')}
           </label>
           <div className="flex gap-2">
@@ -256,7 +256,7 @@ export default function Downloader() {
               value={outputDir}
               onChange={(e) => setOutputDir(e.target.value)}
               placeholder={t('downloader.folder_placeholder')}
-              className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+              className="flex-1 bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent"
             />
             <button
               type="button"
@@ -267,7 +267,7 @@ export default function Downloader() {
                   patchSettings({ default_download_dir: folder })
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-text2 hover:text-text1 transition-colors flex-shrink-0"
             >
               <Folder size={14} />
             </button>
@@ -279,7 +279,7 @@ export default function Downloader() {
       <button
         onClick={handleDownload}
         disabled={!url.trim()}
-        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-accent hover:bg-accent-hover text-white font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 py-3 rounded-xl bg-accent hover:bg-accent-hover text-text1 font-semibold text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Download size={16} />
         {t('downloader.download')}
@@ -288,7 +288,7 @@ export default function Downloader() {
       {/* Batch Mode Toggle */}
       <button
         onClick={() => setBatchMode((b) => !b)}
-        className="flex items-center gap-2 text-sm text-zinc-400 hover:text-white transition-colors self-start"
+        className="flex items-center gap-2 text-sm text-text2 hover:text-text1 transition-colors self-start"
       >
         <Plus size={14} className={batchMode ? 'rotate-45' : ''} />
         {t('downloader.batch_toggle')}
@@ -296,7 +296,7 @@ export default function Downloader() {
 
       {batchMode && (
         <div className="bg-bg-card rounded-xl border border-border p-4 flex flex-col gap-3">
-          <label className="text-sm font-medium text-white">
+          <label className="text-sm font-medium text-text1">
             {t('downloader.batch_label')}
           </label>
           <textarea
@@ -304,12 +304,12 @@ export default function Downloader() {
             onChange={(e) => setBatchUrls(e.target.value)}
             placeholder={t('downloader.batch_placeholder')}
             rows={5}
-            className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent resize-none"
+            className="w-full bg-bg-elevated border border-border rounded-lg px-3 py-2 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent resize-none"
           />
           <button
             onClick={handleBatchDownload}
             disabled={!batchUrls.trim()}
-            className="self-end px-5 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="self-end px-5 py-2 rounded-lg bg-accent hover:bg-accent-hover text-text1 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('downloader.download_all')}
           </button>
@@ -319,7 +319,7 @@ export default function Downloader() {
       {/* Queue */}
       {(activeJobs.length > 0 || finishedJobs.length > 0) && (
         <div className="bg-bg-card rounded-xl border border-border p-4">
-          <h3 className="text-sm font-medium text-white mb-3">
+          <h3 className="text-sm font-medium text-text1 mb-3">
             {t('downloader.queue')}
           </h3>
           <div className="flex flex-col gap-2">

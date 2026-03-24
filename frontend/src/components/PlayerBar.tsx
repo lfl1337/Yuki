@@ -118,7 +118,7 @@ export default function PlayerBar() {
   const volumePct = playerState.volume * 100
 
   return (
-    <div className="h-20 flex-shrink-0 bg-[#0D0D12] border-t border-[#222232] grid grid-cols-[200px_1fr_200px] items-center">
+    <div className="h-20 flex-shrink-0 bg-bg-primary border-t border-border grid grid-cols-[200px_1fr_200px] items-center">
       {/* LEFT: Cover + Title + Artist + Open */}
       <div className="flex items-center gap-3 pl-4 min-w-0">
         <div
@@ -128,22 +128,22 @@ export default function PlayerBar() {
           {playerState.coverArt ? (
             <img src={playerState.coverArt} alt="cover" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-700">
+            <div className="w-full h-full flex items-center justify-center text-text3">
               <span className="text-lg">雪</span>
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-bold text-white truncate leading-tight">
+          <p className="text-[13px] font-bold text-text1 truncate leading-tight">
             {isActive ? (playerState.title || 'Unknown') : 'No file loaded'}
           </p>
-          <p className="text-[11px] text-zinc-400 truncate leading-tight">
+          <p className="text-[11px] text-text2 truncate leading-tight">
             {isActive ? (playerState.artist || '') : ''}
           </p>
         </div>
         <button
           onClick={handleOpenFolder}
-          className="p-1 text-zinc-500 hover:text-white transition-colors flex-shrink-0"
+          className="p-1 text-text3 hover:text-text1 transition-colors flex-shrink-0"
           title="Open audio file"
         >
           <FolderOpen size={14} />
@@ -156,7 +156,7 @@ export default function PlayerBar() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setShuffle(v => !v)}
-            className={`transition-colors ${shuffle ? 'text-accent' : 'text-zinc-500 hover:text-white'}`}
+            className={`transition-colors ${shuffle ? 'text-accent' : 'text-text3 hover:text-text1'}`}
             title="Shuffle"
           >
             <Shuffle size={16} />
@@ -164,15 +164,15 @@ export default function PlayerBar() {
           <button
             onClick={handlePlayPause}
             disabled={!isActive}
-            className="w-11 h-11 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-11 h-11 rounded-full bg-text1 flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             {isPlaying
-              ? <Pause size={20} className="text-black" />
-              : <Play size={20} className="text-black ml-0.5" />}
+              ? <Pause size={20} className="text-bg-primary" />
+              : <Play size={20} className="text-bg-primary ml-0.5" />}
           </button>
           <button
             onClick={() => setRepeat(v => !v)}
-            className={`transition-colors ${repeat ? 'text-accent' : 'text-zinc-500 hover:text-white'}`}
+            className={`transition-colors ${repeat ? 'text-accent' : 'text-text3 hover:text-text1'}`}
             title="Repeat"
           >
             <Repeat size={16} />
@@ -181,7 +181,7 @@ export default function PlayerBar() {
 
         {/* Seekbar */}
         <div className="flex items-center gap-2 w-full player-slider-container">
-          <span className="text-[11px] text-zinc-500 font-mono min-w-[2.5rem] text-right flex-shrink-0">
+          <span className="text-[11px] text-text3 font-mono min-w-[2.5rem] text-right flex-shrink-0">
             {formatTime(playerState.position)}
           </span>
           <input
@@ -194,10 +194,10 @@ export default function PlayerBar() {
             disabled={!isActive}
             className="player-slider flex-1"
             style={{
-              background: `linear-gradient(to right, #fff ${seekPct}%, #333344 ${seekPct}%)`,
+              background: `linear-gradient(to right, var(--text-1) ${seekPct}%, var(--bg-elevated) ${seekPct}%)`,
             }}
           />
-          <span className="text-[11px] text-zinc-500 font-mono min-w-[2.5rem] flex-shrink-0">
+          <span className="text-[11px] text-text3 font-mono min-w-[2.5rem] flex-shrink-0">
             {formatTime(playerState.duration)}
           </span>
         </div>
@@ -205,7 +205,7 @@ export default function PlayerBar() {
 
       {/* RIGHT: Volume */}
       <div className="flex items-center justify-end gap-2 pr-4">
-        <button className="text-zinc-400 hover:text-white transition-colors flex-shrink-0">
+        <button className="text-text2 hover:text-text1 transition-colors flex-shrink-0">
           {playerState.volume === 0 ? (
             <VolumeX size={16} />
           ) : (
@@ -222,7 +222,7 @@ export default function PlayerBar() {
             onChange={handleVolume}
             className="player-slider w-[120px]"
             style={{
-              background: `linear-gradient(to right, #fff ${volumePct}%, #333344 ${volumePct}%)`,
+              background: `linear-gradient(to right, var(--text-1) ${volumePct}%, var(--bg-elevated) ${volumePct}%)`,
             }}
           />
         </div>
