@@ -14,3 +14,21 @@ venv/
 *.egg-info/
 .pytest_cache/
 Yuki_Setup_*.exe
+
+# v2 additions
+legacy_customtkinter.7z
+legacy_customtkinter.zip
+backend/.runtime_port
+backend/*.db
+backend/logs/
+backend/uv.lock
+frontend/node_modules/
+frontend/dist/
+frontend/src-tauri/target/
+frontend/src-tauri/binaries/*.exe
+frontend/src-tauri/gen/
+build/pyinstaller/
+*.db
+*.db-shm
+*.db-wal
+.runtime_port

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 APP_NAME = "Yuki"
-VERSION = "1.1.5"
+VERSION = "2.0.0"
 
 UI_COLORS = {
     "bg_primary":    "#0D0D12",
