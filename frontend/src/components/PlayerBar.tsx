@@ -1,10 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { useStore } from '../store'
 import { playerApi } from '../api/player'
 import { getStreamUrl } from '../api/client'
 import {
-  Play, Pause, SkipBack, SkipForward,
+  Play, Pause,
   Volume2, VolumeX, FolderOpen, Shuffle, Repeat
 } from 'lucide-react'
 
@@ -76,8 +77,19 @@ export default function PlayerBar() {
     await playerApi.volume(vol)
   }, [setPlayerState])
 
+  // Repeat: restart track when it ends (triggers on playing→stopped transition)
+  useEffect(() => {
+    if (!repeat) return
+    if (!playerState.isPlaying && !playerState.isPaused) {
+      if (playerState.duration > 0 && playerState.position > 0) {
+        playerApi.seek(0).then(() => {
+          setTimeout(() => playerApi.play(), 100)
+        })
+      }
+    }
+  }, [playerState.isPlaying, playerState.isPaused, repeat])
+
   const handleOpenFolder = useCallback(async () => {
-    const { open: openDialog } = await import('@tauri-apps/plugin-dialog')
     const selected = await openDialog({
       multiple: false,
       filters: [{ name: 'Audio', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus'] }],
@@ -145,12 +157,6 @@ export default function PlayerBar() {
             <Shuffle size={16} />
           </button>
           <button
-            disabled={!isActive}
-            className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <SkipBack size={18} />
-          </button>
-          <button
             onClick={handlePlayPause}
             disabled={!isActive}
             className="w-11 h-11 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -158,12 +164,6 @@ export default function PlayerBar() {
             {isPlaying
               ? <Pause size={20} className="text-black" />
               : <Play size={20} className="text-black ml-0.5" />}
-          </button>
-          <button
-            disabled={!isActive}
-            className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <SkipForward size={18} />
           </button>
           <button
             onClick={() => setRepeat(v => !v)}

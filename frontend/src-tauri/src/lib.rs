@@ -153,13 +153,15 @@ pub fn run() {
                 {
                     let _ = child.kill();
                 }
-                // Taskkill as backup — no console window
-                #[cfg(target_os = "windows")]
+                // Taskkill as backup — production only, no console window
+                #[cfg(all(not(debug_assertions), target_os = "windows"))]
                 {
                     use std::os::windows::process::CommandExt;
                     let _ = std::process::Command::new("taskkill")
                         .args(["/f", "/im", "yuki-backend-x86_64-pc-windows-msvc.exe"])
                         .creation_flags(0x08000000)
+                        .stdout(std::process::Stdio::null())
+                        .stderr(std::process::Stdio::null())
                         .spawn();
                 }
             }
