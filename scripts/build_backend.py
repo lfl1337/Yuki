@@ -98,10 +98,17 @@ def main() -> None:
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Must use 64-bit Hime conda Python — uv's sys.executable may differ
+    PYTHON = Path(r"C:\Projekte\Hime\Conda\python.exe")
+    if not PYTHON.exists():
+        print(f"ERROR: expected 64-bit Python not found at {PYTHON}")
+        sys.exit(1)
+
     # Build pyinstaller command
     cmd = [
-        sys.executable, "-m", "PyInstaller",
+        str(PYTHON), "-m", "PyInstaller",
         "--onefile",
+        "--target-arch", "x86_64",
         "--name", BINARY_NAME,
         "--distpath", str(OUTPUT_DIR),
         "--workpath", str(ROOT / "build" / "pyinstaller"),
