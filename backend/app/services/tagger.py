@@ -287,14 +287,14 @@ class MP3Tagger:
         for key, frame_cls in TAG_MAP_ID3.items():
             if key in tags and tags[key] is not None:
                 id3.setall(frame_cls.__name__, [frame_cls(text=str(tags[key]))])
-        if "track_number" in tags:
+        if "track_number" in tags and tags["track_number"] is not None:
             trck = str(tags["track_number"])
-            if "total_tracks" in tags:
+            if "total_tracks" in tags and tags["total_tracks"] is not None:
                 trck += f"/{tags['total_tracks']}"
             id3.setall("TRCK", [TRCK(text=trck)])
-        if "disc_number" in tags:
+        if "disc_number" in tags and tags["disc_number"] is not None:
             id3.setall("TPOS", [TPOS(text=str(tags["disc_number"]))])
-        if "comment" in tags:
+        if "comment" in tags and tags["comment"] is not None:
             id3.setall("COMM::eng", [COMM(text=str(tags["comment"]), lang="eng", desc="")])
         audio.save(filepath, v2_version=3)
 
