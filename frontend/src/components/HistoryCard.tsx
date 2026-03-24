@@ -93,6 +93,7 @@ export default function HistoryCard({ entry, onDeleted }: HistoryCardProps) {
             src={entry.thumbnail_url}
             alt=""
             className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-700 text-3xl">

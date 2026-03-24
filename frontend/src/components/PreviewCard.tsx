@@ -43,6 +43,7 @@ export default function PreviewCard({ result, onAddToQueue }: PreviewCardProps) 
             src={result.thumbnail_url}
             alt=""
             className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-700 text-3xl">

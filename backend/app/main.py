@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Yuki Backend",
-    version="2.0.4",
+    version="2.0.5",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None,
