@@ -5,6 +5,7 @@ import PreviewCard from '../components/PreviewCard'
 import QueueItem from '../components/QueueItem'
 import { Clipboard, X, Plus, Download, Folder } from 'lucide-react'
 import { pickFolder } from '../utils/dialog'
+import { loadSettings, patchSettings } from '../api/settings'
 
 interface DetectResult {
   platform: string
@@ -35,7 +36,6 @@ interface DownloadJob {
 
 const AUDIO_QUALITIES = ['320kbps', '192kbps', '128kbps']
 const VIDEO_QUALITIES = ['best', '1080p', '720p', '480p']
-const DEFAULT_FOLDER = ''
 
 export default function Downloader() {
   const { t } = useTranslation()
@@ -44,12 +44,20 @@ export default function Downloader() {
   const [detected, setDetected] = useState<DetectResult | null>(null)
   const [format, setFormat] = useState<'audio' | 'video'>('audio')
   const [quality, setQuality] = useState('320kbps')
-  const [outputDir, setOutputDir] = useState(DEFAULT_FOLDER)
+  const [outputDir, setOutputDir] = useState('')
   const [batchMode, setBatchMode] = useState(false)
   const [batchUrls, setBatchUrls] = useState('')
   const [jobs, setJobs] = useState<DownloadJob[]>([])
   const detectTimer = useRef<ReturnType<typeof setTimeout>>()
   const esRef = useRef<EventSource | null>(null)
+
+  // Load persisted output folder on mount
+  useEffect(() => {
+    loadSettings().then((s) => {
+      const saved = s['default_download_dir']
+      if (typeof saved === 'string' && saved) setOutputDir(saved)
+    })
+  }, [])
 
   // SSE for queue updates
   useEffect(() => {
@@ -247,7 +255,10 @@ export default function Downloader() {
               type="button"
               onClick={async () => {
                 const folder = await pickFolder()
-                if (folder) setOutputDir(folder)
+                if (folder) {
+                  setOutputDir(folder)
+                  patchSettings({ default_download_dir: folder })
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
             >

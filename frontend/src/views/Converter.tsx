@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { converterApi } from '../api/converter'
 import { X, Upload, CheckCircle, AlertCircle, Folder } from 'lucide-react'
 import { pickFolder } from '../utils/dialog'
+import { loadSettings, patchSettings } from '../api/settings'
 
 interface FileEntry {
   path: string
@@ -42,6 +43,18 @@ export default function Converter() {
   const esRef = useRef<EventSource | null>(null)
 
   const isVideoFormat = VIDEO_FORMATS.includes(outputFormat)
+
+  // Load persisted output folder on mount (converter dir, fallback to download dir)
+  useEffect(() => {
+    loadSettings().then((s) => {
+      const converter = s['default_converter_dir']
+      const download = s['default_download_dir']
+      const saved = (typeof converter === 'string' && converter)
+        ? converter
+        : (typeof download === 'string' ? download : '')
+      if (saved) setOutputDir(saved)
+    })
+  }, [])
 
   // SSE for conversion progress
   useEffect(() => {
@@ -313,7 +326,10 @@ export default function Converter() {
               type="button"
               onClick={async () => {
                 const folder = await pickFolder()
-                if (folder) setOutputDir(folder)
+                if (folder) {
+                  setOutputDir(folder)
+                  patchSettings({ default_converter_dir: folder })
+                }
               }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
             >

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { apiFetch } from '../api/client'
+import { loadSettings, patchSettings } from '../api/settings'
 import { LANGUAGES } from '../i18n'
 import { X, ExternalLink, RefreshCw, Folder } from 'lucide-react'
 import { applyTheme } from '../utils/theme'
@@ -15,7 +16,7 @@ interface SettingsModalProps {
 interface AppSettings {
   theme: string
   language: string
-  download_folder: string
+  default_download_dir: string
   ask_download_folder: boolean
   auto_load_last: boolean
   autostart: boolean
@@ -25,7 +26,7 @@ interface AppSettings {
 const defaultSettings: AppSettings = {
   theme: 'dark',
   language: 'en',
-  download_folder: '',
+  default_download_dir: '',
   ask_download_folder: false,
   auto_load_last: false,
   autostart: false,
@@ -70,19 +71,9 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!open) return
-    apiFetch<Record<string, string>>('/api/v1/settings')
-      .then((data) => {
-        const parsed: Partial<AppSettings> = {}
-        for (const [k, v] of Object.entries(data)) {
-          try {
-            ;(parsed as Record<string, unknown>)[k] = JSON.parse(v)
-          } catch {
-            ;(parsed as Record<string, unknown>)[k] = v
-          }
-        }
-        setSettings({ ...defaultSettings, ...parsed })
-      })
-      .catch(() => {})
+    loadSettings().then((data) => {
+      setSettings({ ...defaultSettings, ...(data as Partial<AppSettings>) })
+    })
   }, [open])
 
   const set = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
@@ -97,17 +88,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
 
   const handleSave = async () => {
     setSaving(true)
-    try {
-      const payload = Object.entries(settings).map(([key, value]) => ({
-        key,
-        value: JSON.stringify(value),
-      }))
-      await apiFetch('/api/v1/settings/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-    } catch {}
+    await patchSettings(settings as unknown as Record<string, unknown>)
     setSaving(false)
     onClose()
   }
@@ -225,8 +206,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      value={settings.download_folder}
-                      onChange={(e) => set('download_folder', e.target.value)}
+                      value={settings.default_download_dir}
+                      onChange={(e) => set('default_download_dir', e.target.value)}
                       placeholder={t('settings.download_folder_placeholder')}
                       className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
                     />
@@ -234,7 +215,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                       type="button"
                       onClick={async () => {
                         const folder = await pickFolder()
-                        if (folder) set('download_folder', folder)
+                        if (folder) set('default_download_dir', folder)
                       }}
                       className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-card border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
                     >
