@@ -1,6 +1,8 @@
 {
-  "version": "2.1.1",
+  "version": "1.0.1",
   "build": 1,
   "build_date": "2026-03-21",
-  "changelog": []
+  "changelog": [
+    "[2026-03-22] debug sound remove"
+  ]
 }
