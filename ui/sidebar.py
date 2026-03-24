@@ -5,6 +5,7 @@ Sidebar navigation panel — Hime style left nav.
 import customtkinter as ctk
 
 from config import VERSION, UI_COLORS
+from locales.translator import t
 
 
 C = UI_COLORS
@@ -13,11 +14,12 @@ C = UI_COLORS
 class Sidebar(ctk.CTkFrame):
     """Left sidebar with logo, nav buttons, and status row."""
 
+    # (page_key, icon_prefix, translation_key)
     NAV_ITEMS = [
-        ("downloader", "⬇  Downloader"),
-        ("history",    "🕐  History"),
-        ("editor",     "✏️  MP3 Editor"),
-        ("converter",  "  Converter"),
+        ("downloader", "⬇  ", "tab_downloader"),
+        ("history",    "🕐  ", "tab_history"),
+        ("editor",     "✏️  ", "tab_editor"),
+        ("converter",  "  ",  "tab_converter"),
     ]
 
     def __init__(self, master, on_navigate=None, **kwargs):
@@ -60,8 +62,8 @@ class Sidebar(ctk.CTkFrame):
         ctk.CTkFrame(top, height=1, fg_color=C["border"]).pack(fill="x", padx=8)
 
         # Nav buttons
-        for page, label in self.NAV_ITEMS:
-            self._make_nav_btn(top, page, label)
+        for page, icon, key in self.NAV_ITEMS:
+            self._make_nav_btn(top, page, icon + t(key))
 
         # Bottom section
         bottom = ctk.CTkFrame(self, fg_color="transparent")
@@ -86,7 +88,7 @@ class Sidebar(ctk.CTkFrame):
         self._poll_log_status()
 
         # Settings button
-        self._make_nav_btn(bottom, "settings", "⚙  Settings")
+        self._make_nav_btn(bottom, "settings", "⚙  " + t("settings"))
 
         # Status row
         status_row = ctk.CTkFrame(bottom, fg_color="transparent")
@@ -134,7 +136,6 @@ class Sidebar(ctk.CTkFrame):
 
         # Accent bar (hidden by default)
         bar = ctk.CTkFrame(container, width=3, fg_color=C["accent"], corner_radius=0)
-        # place() at left edge, full height
         bar.place(x=0, rely=0, relheight=1)
         bar.place_forget()
 
@@ -142,12 +143,15 @@ class Sidebar(ctk.CTkFrame):
         self._accent_bars[page] = bar
 
     def _on_click(self, page: str):
-        # Navigate immediately — set_active() provides the visual highlight.
-        # A flash-then-settle pattern doesn't work here: set_active() is called
-        # synchronously inside _on_navigate and overwrites the flash color before
-        # the event loop can render even one frame, so the flash is never visible
-        # and only adds perceived latency.
         self._on_navigate(page)
+
+    def refresh_text(self):
+        """Update nav button labels after a language change."""
+        for page, icon, key in self.NAV_ITEMS:
+            if page in self._nav_buttons:
+                self._nav_buttons[page].configure(text=icon + t(key))
+        if "settings" in self._nav_buttons:
+            self._nav_buttons["settings"].configure(text="⚙  " + t("settings"))
 
     def _poll_log_status(self):
         try:
@@ -168,7 +172,6 @@ class Sidebar(ctk.CTkFrame):
 
     def set_active(self, page: str):
         """Highlight the active nav button."""
-        # Deactivate previous
         if self._active_page in self._nav_buttons:
             self._nav_buttons[self._active_page].configure(
                 fg_color="transparent",
