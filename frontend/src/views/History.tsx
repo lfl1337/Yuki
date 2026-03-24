@@ -99,14 +99,14 @@ export default function History() {
         <div className="relative">
           <Search
             size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text3"
           />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('history.search_placeholder')}
-            className="w-full bg-bg-card border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+            className="w-full bg-bg-card border border-border rounded-lg pl-9 pr-4 py-2 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent"
           />
         </div>
 
@@ -120,8 +120,8 @@ export default function History() {
                 onClick={() => setPlatform(p)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
                   platform === p
-                    ? 'bg-accent text-white'
-                    : 'bg-bg-card border border-border text-zinc-400 hover:text-white'
+                    ? 'bg-accent text-text1'
+                    : 'bg-bg-card border border-border text-text2 hover:text-text1'
                 }`}
               >
                 {p === 'all' ? t('history.all') : p}
@@ -137,8 +137,8 @@ export default function History() {
                 onClick={() => setFormat(f)}
                 className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize transition-colors ${
                   format === f
-                    ? 'bg-accent text-white'
-                    : 'bg-bg-card border border-border text-zinc-400 hover:text-white'
+                    ? 'bg-accent text-text1'
+                    : 'bg-bg-card border border-border text-text2 hover:text-text1'
                 }`}
               >
                 {f === 'all' ? t('history.all_formats') : f}
@@ -149,7 +149,7 @@ export default function History() {
           <div className="ml-auto flex items-center gap-2">
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-card border border-border text-xs text-zinc-400 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-bg-card border border-border text-xs text-text2 hover:text-text1 transition-colors"
             >
               <Download size={12} />
               {t('history.export_csv')}
@@ -160,7 +160,7 @@ export default function History() {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-colors ${
                 confirmClear
                   ? 'bg-red-500/20 border border-red-500/50 text-red-400'
-                  : 'bg-bg-card border border-border text-zinc-400 hover:text-red-400'
+                  : 'bg-bg-card border border-border text-text2 hover:text-red-400'
               }`}
             >
               <Trash2 size={12} />
@@ -170,7 +170,7 @@ export default function History() {
         </div>
 
         {/* Count */}
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-text3">
           {t('history.total_count', { count: data.total })}
         </p>
       </div>
@@ -178,11 +178,11 @@ export default function History() {
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-5">
         {loading ? (
-          <div className="flex items-center justify-center h-32 text-zinc-500 text-sm">
+          <div className="flex items-center justify-center h-32 text-text3 text-sm">
             {t('common.loading')}
           </div>
         ) : data.items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-zinc-600">
+          <div className="flex flex-col items-center justify-center h-48 text-text3">
             <span className="text-4xl mb-3">歴</span>
             <p className="text-sm">{t('history.empty')}</p>
           </div>
@@ -201,17 +201,17 @@ export default function History() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-bg-card transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-lg text-text2 hover:text-text1 hover:bg-bg-card transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="text-sm text-zinc-400">
+          <span className="text-sm text-text2">
             {t('history.page', { current: page, total: data.pages })}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(data.pages, p + 1))}
             disabled={page === data.pages}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-bg-card transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            className="p-1.5 rounded-lg text-text2 hover:text-text1 hover:bg-bg-card transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
           >
             <ChevronRight size={16} />
           </button>

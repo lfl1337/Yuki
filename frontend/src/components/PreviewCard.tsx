@@ -19,7 +19,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   soundcloud: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
   tiktok: 'bg-pink-500/20 text-pink-400 border-pink-500/30',
   twitter: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-  default: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30',
+  default: 'bg-bg-elevated/60 text-text2 border-border/50',
 }
 
 function formatDuration(sec: number) {
@@ -46,7 +46,7 @@ export default function PreviewCard({ result, onAddToQueue }: PreviewCardProps) 
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-700 text-3xl">
+          <div className="w-full h-full flex items-center justify-center text-text3 text-3xl">
             雪
           </div>
         )}
@@ -58,14 +58,14 @@ export default function PreviewCard({ result, onAddToQueue }: PreviewCardProps) 
           <span className={`text-xs px-2 py-0.5 rounded border font-medium ${platformColor}`}>
             {result.platform}
           </span>
-          <span className="text-xs text-zinc-500 capitalize">{result.type}</span>
+          <span className="text-xs text-text3 capitalize">{result.type}</span>
         </div>
 
-        <p className="text-base font-semibold text-white leading-snug line-clamp-2">
+        <p className="text-base font-semibold text-text1 leading-snug line-clamp-2">
           {result.title || 'Unknown title'}
         </p>
 
-        <div className="flex items-center gap-3 text-xs text-zinc-400">
+        <div className="flex items-center gap-3 text-xs text-text2">
           {result.uploader && <span>{result.uploader}</span>}
           {result.duration ? (
             <>
@@ -77,7 +77,7 @@ export default function PreviewCard({ result, onAddToQueue }: PreviewCardProps) 
 
         <button
           onClick={onAddToQueue}
-          className="mt-auto w-fit px-4 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors"
+          className="mt-auto w-fit px-4 py-1.5 rounded-lg bg-accent hover:bg-accent-hover text-text1 text-sm font-medium transition-colors"
         >
           Add to Queue
         </button>

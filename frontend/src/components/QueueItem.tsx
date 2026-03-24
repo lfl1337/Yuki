@@ -30,7 +30,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   soundcloud: 'bg-orange-500/20 text-orange-400',
   tiktok: 'bg-pink-500/20 text-pink-400',
   twitter: 'bg-sky-500/20 text-sky-400',
-  default: 'bg-zinc-500/20 text-zinc-400',
+  default: 'bg-bg-elevated/60 text-text2',
 }
 
 function formatSpeed(bytesPerSec: number) {
@@ -75,7 +75,7 @@ export default function QueueItem({ job }: QueueItemProps) {
             onError={(e) => { e.currentTarget.style.display = 'none' }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-600 text-xl">
+          <div className="w-full h-full flex items-center justify-center text-text3 text-xl">
             雪
           </div>
         )}
@@ -91,7 +91,7 @@ export default function QueueItem({ job }: QueueItemProps) {
             {job.format?.toUpperCase() || 'MP3'}
           </span>
         </div>
-        <p className="text-sm text-white truncate font-medium">
+        <p className="text-sm text-text1 truncate font-medium">
           {job.title || job.url || 'Fetching…'}
         </p>
 
@@ -99,8 +99,8 @@ export default function QueueItem({ job }: QueueItemProps) {
         {isActive && (
           <div className="mt-1.5">
             <div className="flex items-center justify-between mb-0.5">
-              <span className="text-xs text-zinc-500 capitalize">{job.status}</span>
-              <span className="text-xs text-zinc-500">
+              <span className="text-xs text-text3 capitalize">{job.status}</span>
+              <span className="text-xs text-text3">
                 {formatSpeed(job.speed)}
                 {job.eta ? ` · ${formatEta(job.eta)}` : ''}
               </span>
@@ -121,7 +121,7 @@ export default function QueueItem({ job }: QueueItemProps) {
             {job.filepath && (
               <button
                 onClick={handleOpenFolder}
-                className="text-xs text-zinc-400 hover:text-white flex items-center gap-1 ml-2"
+                className="text-xs text-text2 hover:text-text1 flex items-center gap-1 ml-2"
               >
                 <FolderOpen size={11} />
                 Open folder
@@ -138,7 +138,7 @@ export default function QueueItem({ job }: QueueItemProps) {
         )}
 
         {isCancelled && (
-          <span className="text-xs text-zinc-500 mt-1">Cancelled</span>
+          <span className="text-xs text-text3 mt-1">Cancelled</span>
         )}
       </div>
 
@@ -146,7 +146,7 @@ export default function QueueItem({ job }: QueueItemProps) {
       {isActive && (
         <button
           onClick={handleCancel}
-          className="p-1.5 rounded text-zinc-500 hover:text-white hover:bg-bg-elevated transition-colors flex-shrink-0"
+          className="p-1.5 rounded text-text3 hover:text-text1 hover:bg-bg-elevated transition-colors flex-shrink-0"
           title="Cancel"
         >
           <X size={14} />

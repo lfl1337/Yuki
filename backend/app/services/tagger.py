@@ -5,6 +5,8 @@ Supports ID3 (MP3) and MP4/M4A tags with cover art embedding.
 
 import io
 import logging
+import os
+import stat
 from pathlib import Path
 from typing import Optional, Union
 
@@ -30,6 +32,18 @@ def safe_int(value) -> Optional[int]:
         return int(str(value).strip())
     except (ValueError, TypeError):
         return None
+
+
+def remove_readonly(filepath: str) -> bool:
+    """Remove Windows read-only attribute. Returns True if succeeded."""
+    try:
+        current = os.stat(filepath).st_mode
+        os.chmod(filepath, current | stat.S_IWRITE)
+        logger.info("Removed read-only attribute: %s", filepath)
+        return True
+    except Exception as e:
+        logger.error("Failed to remove read-only: %s — %s", filepath, e)
+        return False
 
 TAG_MAP_ID3 = {
     "title": TIT2,
@@ -86,16 +100,33 @@ class MP3Tagger:
         filepath = Path(filepath)
         ext = filepath.suffix.lower()
         try:
-            if ext in (".mp3",):
-                self._write_id3(filepath, tags)
-            elif ext in (".m4a", ".mp4", ".aac"):
-                self._write_mp4(filepath, tags)
-            else:
-                self._write_id3(filepath, tags)
+            self._dispatch_write(filepath, ext, tags)
             logger.info("Tags saved: %s", filepath)
         except Exception as exc:
-            logger.error("Tag save failed: %s — %s", filepath, exc)
-            raise
+            is_perm = isinstance(exc, PermissionError) or isinstance(exc.__context__, PermissionError)
+            if is_perm:
+                logger.warning("Permission denied, trying read-only removal: %s", filepath)
+                if remove_readonly(str(filepath)):
+                    try:
+                        self._dispatch_write(filepath, ext, tags)
+                        logger.info("Tags saved after read-only removal: %s", filepath)
+                    except Exception as retry_exc:
+                        logger.error("Tag save failed after read-only removal: %s — %s", filepath, retry_exc)
+                        raise
+                else:
+                    logger.error("Tag save failed: %s — %s", filepath, exc)
+                    raise
+            else:
+                logger.error("Tag save failed: %s — %s", filepath, exc)
+                raise
+
+    def _dispatch_write(self, filepath: Path, ext: str, tags: dict):
+        if ext in (".mp3",):
+            self._write_id3(filepath, tags)
+        elif ext in (".m4a", ".mp4", ".aac"):
+            self._write_mp4(filepath, tags)
+        else:
+            self._write_id3(filepath, tags)
 
     def set_cover_art(self, filepath: Union[str, Path], source: Union[str, Path]):
         """
@@ -174,9 +205,40 @@ class MP3Tagger:
             current_path.rename(new_path)
             return (True, str(new_path))
         except PermissionError:
+            if remove_readonly(str(current_path)):
+                try:
+                    current_path.rename(new_path)
+                    return (True, str(new_path))
+                except PermissionError:
+                    return (False, "Permission denied even after removing read-only")
             return (False, "Permission denied — file may be in use")
         except OSError as exc:
             return (False, f"Rename failed: {exc}")
+
+    def batch_write_tags(self, filepaths: list, tags: dict) -> dict:
+        """Write tags to multiple files, skipping empty/None/'0' values."""
+        filtered = {
+            k: v for k, v in tags.items()
+            if v is not None and str(v).strip() not in ("", "0")
+        }
+        success = []
+        failed = []
+        for filepath in filepaths:
+            try:
+                if not Path(filepath).exists():
+                    failed.append({"file": filepath, "error": "File not found"})
+                    continue
+                self.write_tags(filepath, filtered)
+                success.append(filepath)
+            except Exception as exc:
+                failed.append({"file": filepath, "error": str(exc)})
+        return {
+            "success": success,
+            "failed": failed,
+            "total": len(filepaths),
+            "succeeded": len(success),
+            "failed_count": len(failed),
+        }
 
     # ------------------------------------------------------------------
     # ID3 helpers

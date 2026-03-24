@@ -15,7 +15,7 @@ function StartupSplash() {
   return (
     <div className="flex h-screen items-center justify-center bg-bg-primary flex-col gap-4">
       <div className="text-6xl text-accent font-bold">雪</div>
-      <div className="text-lg text-zinc-400">Starting Yuki…</div>
+      <div className="text-lg text-text2">Starting Yuki…</div>
       <div className="w-48 h-1 bg-bg-elevated rounded-full overflow-hidden">
         <div className="h-full bg-accent rounded-full animate-pulse" style={{ width: "60%" }} />
       </div>
@@ -27,14 +27,14 @@ function ErrorSplash({ message }: { message: string }) {
   return (
     <div className="flex h-screen items-center justify-center bg-bg-primary flex-col gap-4 px-8 text-center">
       <div className="text-5xl text-red-500 font-bold">✕</div>
-      <div className="text-white text-lg font-semibold">Backend failed to start</div>
-      <div className="text-zinc-400 text-sm max-w-md">{message}</div>
-      <div className="text-zinc-500 text-xs mt-1">
+      <div className="text-text1 text-lg font-semibold">Backend failed to start</div>
+      <div className="text-text2 text-sm max-w-md">{message}</div>
+      <div className="text-text3 text-xs mt-1">
         Logs: %APPDATA%\Yuki\yuki-tauri.log
       </div>
       <button
         onClick={() => window.location.reload()}
-        className="mt-2 px-5 py-2 rounded-xl bg-accent text-white text-sm hover:bg-accent-hover transition-colors"
+        className="mt-2 px-5 py-2 rounded-xl bg-accent text-text1 text-sm hover:bg-accent-hover transition-colors"
       >
         Retry
       </button>
@@ -76,7 +76,7 @@ function AppShell() {
   }, [setBackendOnline]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-bg-primary text-zinc-100 select-none">
+    <div className="flex flex-col h-screen overflow-hidden bg-bg-primary text-text1 select-none">
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-auto min-w-0">

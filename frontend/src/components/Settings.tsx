@@ -47,11 +47,11 @@ function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-        checked ? 'bg-accent' : 'bg-zinc-600'
+        checked ? 'bg-accent' : 'bg-bg-card'
       }`}
     >
       <span
-        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transform transition-transform ${
+        className={`inline-block h-3.5 w-3.5 rounded-full bg-text1 shadow-sm transform transition-transform ${
           checked ? 'translate-x-4' : 'translate-x-0.5'
         }`}
       />
@@ -127,10 +127,10 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
       <div className="w-[600px] max-h-[80vh] bg-bg-secondary rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-base font-semibold text-white">{t('settings.title')}</h2>
+          <h2 className="text-base font-semibold text-text1">{t('settings.title')}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-bg-card transition-colors"
+            className="p-1.5 rounded-lg text-text2 hover:text-text1 hover:bg-bg-card transition-colors"
           >
             <X size={16} />
           </button>
@@ -145,8 +145,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                 onClick={() => setSection(s.id)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                   section === s.id
-                    ? 'bg-accent/20 text-white'
-                    : 'text-zinc-400 hover:text-white hover:bg-bg-card'
+                    ? 'bg-accent/20 text-text1'
+                    : 'text-text2 hover:text-text1 hover:bg-bg-card'
                 }`}
               >
                 {s.label}
@@ -159,7 +159,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
             {section === 'appearance' && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="text-sm font-medium text-white mb-2 block">
+                  <label className="text-sm font-medium text-text1 mb-2 block">
                     {t('settings.theme')}
                   </label>
                   <div className="flex gap-2">
@@ -169,8 +169,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                         onClick={() => set('theme', t_)}
                         className={`px-4 py-1.5 rounded-lg text-sm capitalize border transition-colors ${
                           settings.theme === t_
-                            ? 'bg-accent border-accent text-white'
-                            : 'border-border text-zinc-400 hover:text-white hover:border-zinc-500'
+                            ? 'bg-accent border-accent text-text1'
+                            : 'border-border text-text2 hover:text-text1 hover:border-border'
                         }`}
                       >
                         {t_}
@@ -179,13 +179,13 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-white mb-2 block">
+                  <label className="text-sm font-medium text-text1 mb-2 block">
                     {t('settings.language')}
                   </label>
                   <select
                     value={settings.language}
                     onChange={(e) => set('language', e.target.value)}
-                    className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent"
+                    className="w-full bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text1 focus:outline-none focus:border-accent"
                   >
                     {Object.entries(LANGUAGES).map(([code, label]) => (
                       <option key={code} value={code}>
@@ -200,7 +200,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
             {section === 'downloads' && (
               <div className="flex flex-col gap-5">
                 <div>
-                  <label className="text-sm font-medium text-white mb-2 block">
+                  <label className="text-sm font-medium text-text1 mb-2 block">
                     {t('settings.download_folder')}
                   </label>
                   <div className="flex gap-2">
@@ -209,7 +209,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                       value={settings.default_download_dir}
                       onChange={(e) => set('default_download_dir', e.target.value)}
                       placeholder={t('settings.download_folder_placeholder')}
-                      className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-accent"
+                      className="flex-1 bg-bg-card border border-border rounded-lg px-3 py-2 text-sm text-text1 placeholder-text3 focus:outline-none focus:border-accent"
                     />
                     <button
                       type="button"
@@ -217,7 +217,7 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                         const folder = await pickFolder()
                         if (folder) set('default_download_dir', folder)
                       }}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-card border border-border text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-bg-card border border-border text-sm text-text2 hover:text-text1 transition-colors flex-shrink-0"
                     >
                       <Folder size={14} />
                     </button>
@@ -225,8 +225,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white">{t('settings.ask_folder')}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{t('settings.ask_folder_hint')}</p>
+                    <p className="text-sm text-text1">{t('settings.ask_folder')}</p>
+                    <p className="text-xs text-text3 mt-0.5">{t('settings.ask_folder_hint')}</p>
                   </div>
                   <Toggle
                     checked={settings.ask_download_folder}
@@ -235,8 +235,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white">{t('settings.auto_load_last')}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{t('settings.auto_load_last_hint')}</p>
+                    <p className="text-sm text-text1">{t('settings.auto_load_last')}</p>
+                    <p className="text-xs text-text3 mt-0.5">{t('settings.auto_load_last_hint')}</p>
                   </div>
                   <Toggle
                     checked={settings.auto_load_last}
@@ -250,8 +250,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white">{t('settings.autostart')}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{t('settings.autostart_hint')}</p>
+                    <p className="text-sm text-text1">{t('settings.autostart')}</p>
+                    <p className="text-xs text-text3 mt-0.5">{t('settings.autostart_hint')}</p>
                   </div>
                   <Toggle
                     checked={settings.autostart}
@@ -260,8 +260,8 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-white">{t('settings.ytdlp_auto_update')}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{t('settings.ytdlp_hint')}</p>
+                    <p className="text-sm text-text1">{t('settings.ytdlp_auto_update')}</p>
+                    <p className="text-xs text-text3 mt-0.5">{t('settings.ytdlp_hint')}</p>
                   </div>
                   <Toggle
                     checked={settings.ytdlp_auto_update}
@@ -269,16 +269,16 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                   />
                 </div>
                 <div>
-                  <p className="text-sm text-white mb-2">{t('settings.check_updates')}</p>
+                  <p className="text-sm text-text1 mb-2">{t('settings.check_updates')}</p>
                   <button
                     onClick={handleCheckUpdate}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bg-card hover:bg-bg-elevated border border-border text-sm text-white transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-bg-card hover:bg-bg-elevated border border-border text-sm text-text1 transition-colors"
                   >
                     <RefreshCw size={14} />
                     {t('settings.check_now')}
                   </button>
                   {updateStatus && (
-                    <p className="text-xs text-zinc-400 mt-2">{updateStatus}</p>
+                    <p className="text-xs text-text2 mt-2">{updateStatus}</p>
                   )}
                 </div>
               </div>
@@ -289,11 +289,11 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
                 <div className="flex items-center gap-4">
                   <span className="text-5xl text-accent">雪</span>
                   <div>
-                    <p className="text-lg font-semibold text-white">Yuki — Media Suite</p>
-                    <p className="text-sm text-zinc-400">Version 2.0.0</p>
+                    <p className="text-lg font-semibold text-text1">Yuki — Media Suite</p>
+                    <p className="text-sm text-text2">Version 2.0.0</p>
                   </div>
                 </div>
-                <p className="text-sm text-zinc-400 leading-relaxed">
+                <p className="text-sm text-text2 leading-relaxed">
                   {t('settings.about_description')}
                 </p>
                 <a
@@ -313,14 +313,14 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
         <div className="flex justify-end gap-2 px-6 py-4 border-t border-border">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-bg-card transition-colors"
+            className="px-4 py-2 rounded-lg text-sm text-text2 hover:text-text1 hover:bg-bg-card transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 rounded-lg text-sm bg-accent hover:bg-accent-hover text-white font-medium transition-colors disabled:opacity-60"
+            className="px-5 py-2 rounded-lg text-sm bg-accent hover:bg-accent-hover text-text1 font-medium transition-colors disabled:opacity-60"
           >
             {saving ? t('common.saving') : t('common.save')}
           </button>

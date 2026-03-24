@@ -45,7 +45,7 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-5 pt-6 pb-4 flex items-center gap-3">
         <span className="text-4xl text-accent leading-none select-none">雪</span>
-        <span className="text-lg font-semibold text-white tracking-wide">Yuki</span>
+        <span className="text-lg font-semibold text-text1 tracking-wide">Yuki</span>
       </div>
 
       {/* Nav */}
@@ -58,8 +58,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors relative group ${
                 isActive
-                  ? 'bg-accent/20 text-white border-l-2 border-accent pl-[10px]'
-                  : 'text-zinc-400 hover:text-white hover:bg-bg-card border-l-2 border-transparent pl-[10px]'
+                  ? 'bg-accent/20 text-text1 border-l-2 border-accent pl-[10px]'
+                  : 'text-text2 hover:text-text1 hover:bg-bg-card border-l-2 border-transparent pl-[10px]'
               }`
             }
           >
@@ -73,7 +73,7 @@ export default function Sidebar() {
       <div className="px-3 pb-4 flex flex-col gap-2">
         <button
           onClick={() => setSettingsOpen(true)}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-zinc-400 hover:text-white hover:bg-bg-card transition-colors w-full"
+          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-text2 hover:text-text1 hover:bg-bg-card transition-colors w-full"
         >
           <SettingsIcon size={16} />
           <span>{t('nav.settings')}</span>
@@ -84,7 +84,7 @@ export default function Sidebar() {
               online ? 'bg-green-500' : 'bg-red-500'
             }`}
           />
-          <span className="text-xs text-zinc-500">v2.0.8</span>
+          <span className="text-xs text-text3">v2.1.0</span>
         </div>
       </div>
     </aside>

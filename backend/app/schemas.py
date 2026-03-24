@@ -152,6 +152,24 @@ class AutoNameRequest(BaseModel):
     filepath: str
 
 
+class BatchSaveRequest(BaseModel):
+    filepaths: list[str]
+    tags: dict[str, str]
+
+
+class BatchSaveFailure(BaseModel):
+    file: str
+    error: str
+
+
+class BatchSaveResult(BaseModel):
+    success: list[str]
+    failed: list[BatchSaveFailure]
+    total: int
+    succeeded: int
+    failed_count: int
+
+
 # ---- Converter ----
 
 class QualitySettings(BaseModel):

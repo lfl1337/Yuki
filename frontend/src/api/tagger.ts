@@ -1,5 +1,13 @@
 import { apiFetch } from "./client";
 
+export interface BatchSaveResponse {
+  success: string[]
+  failed: { file: string; error: string }[]
+  total: number
+  succeeded: number
+  failed_count: number
+}
+
 export interface TagsData {
   filepath: string;
   title: string;
@@ -48,4 +56,10 @@ export const taggerApi = {
 
   autoName: (filepath: string) =>
     apiFetch<{ suggested_name: string }>(`/tagger/auto-name?filepath=${encodeURIComponent(filepath)}`),
+
+  batchSave: (filepaths: string[], tags: Record<string, string>) =>
+    apiFetch<BatchSaveResponse>('/tagger/batch-save', {
+      method: 'POST',
+      body: JSON.stringify({ filepaths, tags }),
+    }),
 };
