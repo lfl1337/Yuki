@@ -1,6 +1,6 @@
 {
   "productName": "Yuki",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "identifier": "app.yuki.media",
   "build": {
     "beforeDevCommand": "npm run vite",
@@ -38,7 +38,8 @@
     "externalBin": ["binaries/yuki-backend"],
     "windows": {
       "nsis": {
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "installerHooks": "nsis/hooks.nsh"
       }
     }
   }

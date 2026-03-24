@@ -21,6 +21,16 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+
+def safe_int(value) -> Optional[int]:
+    """Convert value to int, returning None for empty/invalid input."""
+    if value is None or str(value).strip() == "":
+        return None
+    try:
+        return int(str(value).strip())
+    except (ValueError, TypeError):
+        return None
+
 TAG_MAP_ID3 = {
     "title": TIT2,
     "artist": TPE1,
@@ -291,15 +301,18 @@ class MP3Tagger:
                 continue
             val = tags[key]
             if key == "bpm":
-                try:
-                    audio.tags[mp4_key] = [int(val)]
-                except ValueError:
-                    pass
+                bpm_val = safe_int(val)
+                if bpm_val is not None:
+                    audio.tags[mp4_key] = [bpm_val]
             elif key == "track_number":
-                total = int(tags.get("total_tracks", 0) or 0)
-                audio.tags[mp4_key] = [(int(val), total)]
+                track_val = safe_int(val)
+                if track_val is not None:
+                    total = safe_int(tags.get("total_tracks")) or 0
+                    audio.tags[mp4_key] = [(track_val, total)]
             elif key == "disc_number":
-                audio.tags[mp4_key] = [(int(val), 0)]
+                disc_val = safe_int(val)
+                if disc_val is not None:
+                    audio.tags[mp4_key] = [(disc_val, 0)]
             else:
                 audio.tags[mp4_key] = [str(val)]
         audio.save()
