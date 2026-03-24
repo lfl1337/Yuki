@@ -17,9 +17,9 @@ def _default_data_dir() -> str:
 
 def _resolve_ffmpeg() -> str:
     """Resolve ffmpeg.exe — works in PyInstaller bundle and dev mode."""
-    # PyInstaller: _MEIPASS is the extracted bundle dir
     if getattr(sys, "frozen", False):
-        base = Path(sys.executable).parent
+        # PyInstaller --onefile: bundled files are extracted to sys._MEIPASS
+        base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
     else:
         # dev: project root is 3 levels above this file (backend/app/config.py)
         base = Path(__file__).parent.parent.parent
@@ -28,7 +28,7 @@ def _resolve_ffmpeg() -> str:
 
 def _resolve_ffprobe() -> str:
     if getattr(sys, "frozen", False):
-        base = Path(sys.executable).parent
+        base = Path(sys._MEIPASS)  # type: ignore[attr-defined]
     else:
         base = Path(__file__).parent.parent.parent
     return str(base / "ffmpeg" / "ffprobe.exe")

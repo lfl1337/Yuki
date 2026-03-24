@@ -84,7 +84,7 @@ export default function Sidebar() {
               online ? 'bg-green-500' : 'bg-red-500'
             }`}
           />
-          <span className="text-xs text-zinc-500">v2.0.4</span>
+          <span className="text-xs text-zinc-500">v2.0.5</span>
         </div>
       </div>
     </aside>

@@ -1,6 +1,6 @@
 {
   "productName": "Yuki",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "identifier": "app.yuki.media",
   "build": {
     "beforeDevCommand": "npm run vite",
@@ -18,12 +18,11 @@
         "minWidth": 800,
         "minHeight": 600,
         "decorations": true,
-        "resizable": true,
-        "devtools": true
+        "resizable": true
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+      "csp": "default-src 'self' http://127.0.0.1:*; img-src 'self' data: blob: https: http:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; script-src 'self'; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
