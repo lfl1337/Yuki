@@ -595,7 +595,7 @@ class EditorTab(ctk.CTkFrame):
             self._rename_status.configure(text="No file loaded", text_color=C["text_muted"])
             return
         path = str(Path(self._filepath).resolve())
-        subprocess.Popen(['explorer', f'/select,{path}'])
+        subprocess.Popen(['explorer', f'/select,{path}'], creationflags=subprocess.CREATE_NO_WINDOW)
 
     def _load_placeholder(self) -> ctk.CTkImage:
         path = ASSETS_DIR / "placeholder_cover.png"

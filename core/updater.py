@@ -21,7 +21,8 @@ def _get_installed_version() -> Optional[str]:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "yt_dlp", "--version"],
-            capture_output=True, text=True, timeout=10
+            capture_output=True, text=True, timeout=10,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
         return result.stdout.strip() or None
     except Exception:
@@ -47,7 +48,8 @@ def _do_update() -> bool:
     try:
         result = subprocess.run(
             [sys.executable, "-m", "pip", "install", "-U", "yt-dlp", "--quiet"],
-            capture_output=True, text=True, timeout=120
+            capture_output=True, text=True, timeout=120,
+            creationflags=subprocess.CREATE_NO_WINDOW,
         )
         if result.returncode == 0:
             logger.info("yt-dlp updated successfully")
