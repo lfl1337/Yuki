@@ -1,32 +1,16 @@
-/** Open a file's containing folder in the OS file explorer.
- *
- * Strategy:
- *  1. Try Tauri shell plugin open() — works inside a Tauri window.
- *  2. Fall back to POST /api/v1/system/open-folder — works if Tauri API
- *     is unavailable or the shell plugin returns an error. */
+import { apiFetch } from '../api/client'
+
+/** Open a file's containing folder in Windows Explorer via the backend.
+ * Uses the backend's /system/open-folder endpoint which calls explorer.exe.
+ * Skips the Tauri shell plugin — it silently fails to open the window. */
 export async function openFolder(filepath: string): Promise<void> {
   if (!filepath) return
-
-  // Get the directory part (handles both \ and /)
-  const folder = filepath.replace(/[/\\][^/\\]+$/, '') || filepath
-
-  // 1. Tauri shell plugin
   try {
-    const { open } = await import('@tauri-apps/plugin-shell')
-    await open(folder)
-    return
-  } catch {
-    // Tauri not available, or shell plugin error — fall through to backend
-  }
-
-  // 2. Backend fallback via explorer subprocess
-  try {
-    await fetch('/api/v1/system/open-folder', {
+    await apiFetch<{ ok: boolean }>('/system/open-folder', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: filepath }),
     })
-  } catch {
-    // Nothing we can do
+  } catch (e) {
+    console.error('[Yuki] openFolder failed:', e)
   }
 }
