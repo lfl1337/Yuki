@@ -119,19 +119,31 @@ pub fn run() {
                 for _ in 0..150 {
                     std::thread::sleep(Duration::from_millis(100));
                     if rp.exists() {
-                        let port = std::fs::read_to_string(&rp)
-                            .unwrap_or_default()
-                            .trim()
-                            .to_string();
-                        if !port.is_empty() {
-                            write_log(&format!("Found port: {}", port));
-                            let _ = ah.emit("backend-port", port);
-                            let _ = ah.emit("backend-ready", ());
-                            return;
+                        if let Ok(content) = std::fs::read_to_string(&rp) {
+                            let trimmed = content.trim().to_string();
+                            if trimmed.parse::<u16>().is_ok() {
+                                write_log(&format!("Port found: {}", trimmed));
+                                let _ = ah.emit("backend-port", &trimmed);
+                                // Verify backend is actually listening before signalling ready
+                                let url = format!("http://127.0.0.1:{}/health", trimmed);
+                                for _ in 0..30 {
+                                    if let Ok(resp) = ureq::get(&url).call() {
+                                        if resp.status() == 200 {
+                                            write_log("Health check passed — backend ready");
+                                            let _ = ah.emit("backend-ready", ());
+                                            return;
+                                        }
+                                    }
+                                    std::thread::sleep(Duration::from_millis(500));
+                                }
+                                write_log("Health check timed out — signalling ready anyway");
+                                let _ = ah.emit("backend-ready", ());
+                                return;
+                            }
                         }
                     }
                 }
-                // Timeout: fall back to default port so UI doesn't hang forever
+                // Timeout: fall back so UI doesn't hang forever
                 write_log("Timeout: port file not found after 15s, using 9001");
                 let _ = ah.emit("backend-port", "9001".to_string());
                 let _ = ah.emit("backend-ready", ());
