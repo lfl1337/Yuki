@@ -72,6 +72,8 @@ async def start_conversion(
 ) -> list[str]:
     job_ids = []
     for input_path in files:
+        # Ensure absolute path so subprocess can always find the file
+        input_path = str(Path(input_path).resolve())
         job_id = str(uuid.uuid4())
         out_path = _resolve_output_path(
             input_path, output_format, output_dir,

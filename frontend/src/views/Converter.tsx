@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 import { converterApi } from '../api/converter'
 import { getStreamUrl } from '../api/client'
 import { X, Upload, CheckCircle, AlertCircle, Folder } from 'lucide-react'
@@ -40,8 +41,7 @@ export default function Converter() {
   const [filenameMode, setFilenameMode] = useState('keep')
   const [createSubfolder, setCreateSubfolder] = useState(false)
   const [jobs, setJobs] = useState<Map<string, ConversionJob>>(new Map())
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const esRef = useRef<EventSource | null>(null)
+const esRef = useRef<EventSource | null>(null)
 
   const isVideoFormat = VIDEO_FORMATS.includes(outputFormat)
 
@@ -115,18 +115,16 @@ export default function Converter() {
     [addFiles]
   )
 
-  const handleFileInput = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const fileList = e.target.files
-      if (!fileList) return
-      const paths: string[] = Array.from(fileList).map(
-        (f) => (f as File & { path?: string }).path || f.name
-      )
-      addFiles(paths)
-      e.target.value = ''
-    },
-    [addFiles]
-  )
+  // Use Tauri dialog to pick files — always returns full absolute paths
+  const handlePickFiles = useCallback(async () => {
+    const selected = await openDialog({
+      multiple: true,
+      filters: [{ name: 'Audio / Video', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus', 'mp4', 'mkv', 'avi', 'mov', 'webm'] }],
+    })
+    if (!selected) return
+    const paths = Array.isArray(selected) ? selected : [selected]
+    addFiles(paths)
+  }, [addFiles])
 
   const removeFile = useCallback((path: string) => {
     setFiles((prev) => prev.filter((f) => f.path !== path))
@@ -168,7 +166,7 @@ export default function Converter() {
         onDrop={handleDrop}
         onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={handlePickFiles}
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
           dragging
             ? 'border-accent bg-accent/10'
@@ -178,14 +176,6 @@ export default function Converter() {
         <Upload size={28} className="mx-auto mb-3 text-zinc-500" />
         <p className="text-sm text-white font-medium">{t('converter.drop_zone')}</p>
         <p className="text-xs text-zinc-500 mt-1">{t('converter.drop_hint')}</p>
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          accept="audio/*,video/*"
-          className="hidden"
-          onChange={handleFileInput}
-        />
       </div>
 
       {/* File List */}
