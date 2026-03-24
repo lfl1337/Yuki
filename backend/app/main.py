@@ -1,5 +1,5 @@
 """
-Yuki FastAPI application — v2.0.0
+Yuki FastAPI application — v2.0.2
 Local-only: binds to 127.0.0.1 exclusively.
 """
 
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Yuki Backend",
-    version="2.0.0",
+    version="2.0.2",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None,
@@ -65,7 +65,7 @@ app.add_middleware(
         "https://tauri.localhost",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
 )
 app.add_middleware(AuditMiddleware)
@@ -87,7 +87,7 @@ app.include_router(system.router, prefix="/api/v1")
 async def health():
     return {
         "status": "ok",
-        "version": "2.0.0",
+        "version": "2.0.2",
         "service": "yuki-backend",
         "port": settings.port,
     }

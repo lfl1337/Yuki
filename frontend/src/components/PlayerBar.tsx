@@ -1,11 +1,11 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store'
 import { playerApi } from '../api/player'
 import { getStreamUrl } from '../api/client'
 import {
   Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, FolderOpen
+  Volume2, VolumeX, FolderOpen, Shuffle, Repeat
 } from 'lucide-react'
 
 function formatTime(sec: number) {
@@ -20,8 +20,10 @@ export default function PlayerBar() {
   const { playerState, setPlayerState, backendOnline } = useStore()
   const esRef = useRef<EventSource | null>(null)
   const seekingRef = useRef(false)
+  const [shuffle, setShuffle] = useState(false)
+  const [repeat, setRepeat] = useState(false)
 
-  // SSE connection — maps snake_case backend keys to camelCase store keys
+  // SSE connection
   useEffect(() => {
     if (!backendOnline) return
 
@@ -74,11 +76,16 @@ export default function PlayerBar() {
     await playerApi.volume(vol)
   }, [setPlayerState])
 
-  const handleOpenFolder = useCallback(() => {
-    if (playerState.filepath) {
-      // Trigger OS file explorer via backend or just navigate to editor
+  const handleOpenFolder = useCallback(async () => {
+    const { open: openDialog } = await import('@tauri-apps/plugin-dialog')
+    const selected = await openDialog({
+      multiple: false,
+      filters: [{ name: 'Audio', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus'] }],
+    })
+    if (selected && typeof selected === 'string') {
+      await playerApi.load(selected)
     }
-  }, [playerState.filepath])
+  }, [])
 
   const handleCoverClick = useCallback(() => {
     if (playerState.filepath) {
@@ -88,107 +95,132 @@ export default function PlayerBar() {
 
   const isActive = playerState.filepath !== ''
   const isPlaying = playerState.isPlaying
+  const seekPct = playerState.duration > 0
+    ? (playerState.position / playerState.duration) * 100
+    : 0
+  const volumePct = playerState.volume * 100
 
   return (
-    <div className="h-[72px] flex-shrink-0 bg-bg-secondary border-t border-border flex items-center px-4 gap-4">
-      {/* Cover + Open */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <button
-          onClick={handleOpenFolder}
-          className="p-1.5 rounded text-zinc-500 hover:text-white hover:bg-bg-card transition-colors"
-          title="Open folder"
-        >
-          <FolderOpen size={14} />
-        </button>
+    <div className="h-20 flex-shrink-0 bg-[#0D0D12] border-t border-[#222232] grid grid-cols-[200px_1fr_200px] items-center">
+      {/* LEFT: Cover + Title + Artist + Open */}
+      <div className="flex items-center gap-3 pl-4 min-w-0">
         <div
-          className="w-12 h-12 rounded-lg overflow-hidden bg-bg-card cursor-pointer flex-shrink-0"
+          className="w-12 h-12 rounded-lg overflow-hidden bg-bg-card flex-shrink-0 cursor-pointer"
           onClick={handleCoverClick}
         >
           {playerState.coverArt ? (
-            <img
-              src={playerState.coverArt}
-              alt="cover"
-              className="w-full h-full object-cover"
-            />
+            <img src={playerState.coverArt} alt="cover" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-zinc-600">
+            <div className="w-full h-full flex items-center justify-center text-zinc-700">
               <span className="text-lg">雪</span>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Title/Artist */}
-      <div className="w-[190px] flex-shrink-0 min-w-0">
-        <p className="text-sm font-medium text-white truncate">
-          {isActive ? playerState.title || 'Unknown' : '—'}
-        </p>
-        <p className="text-xs text-zinc-400 truncate">
-          {isActive ? playerState.artist || '' : ''}
-        </p>
-      </div>
-
-      {/* Transport */}
-      <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-bold text-white truncate leading-tight">
+            {isActive ? (playerState.title || 'Unknown') : 'No file loaded'}
+          </p>
+          <p className="text-[11px] text-zinc-400 truncate leading-tight">
+            {isActive ? (playerState.artist || '') : ''}
+          </p>
+        </div>
         <button
-          disabled={!isActive}
-          className="p-1.5 rounded text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          onClick={handleOpenFolder}
+          className="p-1 text-zinc-500 hover:text-white transition-colors flex-shrink-0"
+          title="Open audio file"
         >
-          <SkipBack size={16} />
-        </button>
-        <button
-          onClick={handlePlayPause}
-          disabled={!isActive}
-          className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
-        >
-          {isPlaying
-            ? <Pause size={18} className="text-black" />
-            : <Play size={18} className="text-black ml-0.5" />}
-        </button>
-        <button
-          disabled={!isActive}
-          className="p-1.5 rounded text-zinc-400 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <SkipForward size={16} />
+          <FolderOpen size={14} />
         </button>
       </div>
 
-      {/* Seekbar */}
-      <div className="flex-1 flex items-center gap-2 min-w-0">
-        <span className="text-xs text-zinc-500 w-8 text-right flex-shrink-0">
-          {formatTime(playerState.position)}
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={playerState.duration || 1}
-          step={0.5}
-          value={seekingRef.current ? undefined : playerState.position}
-          onChange={handleSeek}
-          disabled={!isActive}
-          className="flex-1 h-1.5 accent-purple-500 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-        />
-        <span className="text-xs text-zinc-500 w-8 flex-shrink-0">
-          {formatTime(playerState.duration)}
-        </span>
+      {/* CENTER: Controls + Seekbar */}
+      <div className="flex flex-col items-center justify-center gap-1 px-4">
+        {/* Transport controls */}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShuffle(v => !v)}
+            className={`transition-colors ${shuffle ? 'text-accent' : 'text-zinc-500 hover:text-white'}`}
+            title="Shuffle"
+          >
+            <Shuffle size={16} />
+          </button>
+          <button
+            disabled={!isActive}
+            className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <SkipBack size={18} />
+          </button>
+          <button
+            onClick={handlePlayPause}
+            disabled={!isActive}
+            className="w-11 h-11 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {isPlaying
+              ? <Pause size={20} className="text-black" />
+              : <Play size={20} className="text-black ml-0.5" />}
+          </button>
+          <button
+            disabled={!isActive}
+            className="text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <SkipForward size={18} />
+          </button>
+          <button
+            onClick={() => setRepeat(v => !v)}
+            className={`transition-colors ${repeat ? 'text-accent' : 'text-zinc-500 hover:text-white'}`}
+            title="Repeat"
+          >
+            <Repeat size={16} />
+          </button>
+        </div>
+
+        {/* Seekbar */}
+        <div className="flex items-center gap-2 w-full player-slider-container">
+          <span className="text-[11px] text-zinc-500 font-mono min-w-[2.5rem] text-right flex-shrink-0">
+            {formatTime(playerState.position)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={playerState.duration || 1}
+            step={0.5}
+            value={playerState.position}
+            onChange={handleSeek}
+            disabled={!isActive}
+            className="player-slider flex-1"
+            style={{
+              background: `linear-gradient(to right, #fff ${seekPct}%, #333344 ${seekPct}%)`,
+            }}
+          />
+          <span className="text-[11px] text-zinc-500 font-mono min-w-[2.5rem] flex-shrink-0">
+            {formatTime(playerState.duration)}
+          </span>
+        </div>
       </div>
 
-      {/* Volume */}
-      <div className="flex items-center gap-2 flex-shrink-0">
-        {playerState.volume === 0 ? (
-          <VolumeX size={16} className="text-zinc-400" />
-        ) : (
-          <Volume2 size={16} className="text-zinc-400" />
-        )}
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={playerState.volume}
-          onChange={handleVolume}
-          className="w-20 h-1.5 accent-purple-500 cursor-pointer"
-        />
+      {/* RIGHT: Volume */}
+      <div className="flex items-center justify-end gap-2 pr-4">
+        <button className="text-zinc-400 hover:text-white transition-colors flex-shrink-0">
+          {playerState.volume === 0 ? (
+            <VolumeX size={16} />
+          ) : (
+            <Volume2 size={16} />
+          )}
+        </button>
+        <div className="player-slider-container">
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={playerState.volume}
+            onChange={handleVolume}
+            className="player-slider w-[120px]"
+            style={{
+              background: `linear-gradient(to right, #fff ${volumePct}%, #333344 ${volumePct}%)`,
+            }}
+          />
+        </div>
       </div>
     </div>
   )

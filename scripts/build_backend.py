@@ -36,6 +36,7 @@ HIDDEN_IMPORTS = [
     "app.routers.converter",
     "app.routers.updater",
     "app.routers.settings_router",
+    "app.routers.system",
     "app.services.detector",
     "app.services.downloader",
     "app.services.player",
