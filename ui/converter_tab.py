@@ -811,7 +811,7 @@ class ConverterTab(ctk.CTkFrame):
             if self._subfolder_var.get():
                 folder = str(Path(folder) / "Yuki Converted")
         if folder and Path(folder).exists():
-            sp.Popen(f'explorer "{folder}"')
+            sp.Popen(['explorer', folder], creationflags=sp.CREATE_NO_WINDOW)
 
     # ------------------------------------------------------------------
     # Cancel all
