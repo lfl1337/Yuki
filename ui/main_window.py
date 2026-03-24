@@ -283,6 +283,26 @@ class MainWindow(ctk.CTk):
     def _on_language_change(self, lang_code: str):
         self._settings["language"] = lang_code
         self._save_settings()
+        self._reload_ui()
+
+    def _reload_ui(self):
+        """Refresh all translatable UI text after a language change."""
+        try:
+            self._downloader_tab.refresh_text()
+        except Exception:
+            pass
+        try:
+            self._history_tab.refresh_text()
+        except Exception:
+            pass
+        try:
+            self._editor_tab.refresh_text()
+        except Exception:
+            pass
+        try:
+            self._player_bar.refresh_text()
+        except Exception:
+            pass
 
     def _apply_theme(self, theme: str):
         if theme == "system":

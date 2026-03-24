@@ -209,13 +209,34 @@ class Downloader:
             self._error_cb(str(exc))
 
     def _resolve_output_path(self, opts: dict, info: dict) -> str:
-        """Try to determine the actual output filepath after download."""
+        """Try to determine the actual output filepath after download + postprocessing."""
+        # 1. yt-dlp populates requested_downloads[0]["filepath"] after all postprocessors
+        #    finish (including FFmpegExtractAudio .webm → .mp3 conversion).
+        #    This is the most reliable source.
+        try:
+            requested = info.get("requested_downloads") or []
+            if requested:
+                fp = requested[0].get("filepath", "")
+                if fp and Path(fp).exists():
+                    return str(Path(fp).resolve())
+        except Exception:
+            pass
+
+        # 2. Progress hook captured the pre-postprocessing filename (e.g. .webm).
+        #    Try swapping the extension to common audio formats to find the real file.
         if self._current_filepath:
             fp = self._current_filepath
             if fp.endswith(".part"):
                 fp = fp[:-5]
-            return str(Path(fp).resolve())
-        # Fallback: reconstruct from template
+            p = Path(fp)
+            if p.exists():
+                return str(p.resolve())
+            for ext in (".mp3", ".m4a", ".flac", ".wav", ".ogg", ".aac", ".opus"):
+                candidate = p.with_suffix(ext)
+                if candidate.exists():
+                    return str(candidate.resolve())
+
+        # 3. Reconstruct from the outtmpl template as a last resort.
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 fp = ydl.prepare_filename(info)
