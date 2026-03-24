@@ -1,7 +1,6 @@
-"""Rotating file + in-memory logger for Yuki backend."""
+"""File + in-memory logger for Yuki backend."""
 
 import logging
-import logging.handlers
 from collections import deque
 from pathlib import Path
 from typing import Callable, Optional
@@ -31,6 +30,13 @@ class _MemoryHandler(logging.Handler):
 def setup_logging(log_file: Path) -> None:
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
+    # Delete any rotated backup files left by the old TimedRotatingFileHandler
+    for old in log_file.parent.glob(f"{log_file.name}.*"):
+        try:
+            old.unlink()
+        except Exception:
+            pass
+
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
 
@@ -39,17 +45,7 @@ def setup_logging(log_file: Path) -> None:
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # Timed rotating file handler — rotates at midnight, keeps 7 days.
-    # Uses delay=True so the file is not held open, avoiding Windows
-    # PermissionError when the log file is locked during rotation.
-    fh = logging.handlers.TimedRotatingFileHandler(
-        log_file,
-        when="midnight",
-        interval=1,
-        backupCount=7,
-        encoding="utf-8",
-        delay=True,
-    )
+    fh = logging.FileHandler(log_file, mode="a", encoding="utf-8")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(fmt)
     root.addHandler(fh)
