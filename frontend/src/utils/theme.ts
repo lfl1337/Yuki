@@ -1,4 +1,5 @@
 export function applyTheme(theme: string) {
+  localStorage.setItem('yuki-theme', theme)
   const root = document.documentElement
   if (theme === 'dark') {
     root.classList.add('dark')
