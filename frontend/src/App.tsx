@@ -8,7 +8,7 @@ import History from "./views/History";
 import Editor from "./views/Editor";
 import Converter from "./views/Converter";
 import { useStore } from "./store";
-import { checkBackendOnline, apiFetch } from "./api/client";
+import { checkBackendOnline, apiFetch, setPort } from "./api/client";
 import { applyTheme } from "./utils/theme";
 
 function StartupSplash() {
@@ -28,7 +28,7 @@ function AppShell() {
 
   // Apply saved theme on startup
   useEffect(() => {
-    apiFetch<Record<string, string>>('/api/v1/settings')
+    apiFetch<Record<string, string>>('/settings')
       .then((data) => {
         const raw = data['theme']
         const theme = raw ? (JSON.parse(raw) as string) : 'dark'
@@ -80,8 +80,11 @@ export default function App() {
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
-    // Production: wait for Tauri "backend-ready" event
+    // Production: receive port from Rust, then signal ready
     import("@tauri-apps/api/event").then(({ listen }) => {
+      listen<string>("backend-port", (event) => {
+        setPort(event.payload);
+      });
       listen("backend-ready", () => setBackendReady(true));
     });
     // Safety fallback after 15s

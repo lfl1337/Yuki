@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store'
 import { playerApi } from '../api/player'
+import { getStreamUrl } from '../api/client'
 import {
   Play, Pause, SkipBack, SkipForward,
   Volume2, VolumeX, FolderOpen
@@ -26,7 +27,7 @@ export default function PlayerBar() {
 
     const connect = () => {
       if (esRef.current) esRef.current.close()
-      const es = new EventSource('/api/v1/player/stream')
+      const es = new EventSource(getStreamUrl('/api/v1/player/stream'))
       es.onmessage = (e) => {
         try {
           const raw = JSON.parse(e.data)

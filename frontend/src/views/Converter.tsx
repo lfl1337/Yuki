@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { converterApi } from '../api/converter'
+import { getStreamUrl } from '../api/client'
 import { X, Upload, CheckCircle, AlertCircle, Folder } from 'lucide-react'
 import { pickFolder } from '../utils/dialog'
 import { loadSettings, patchSettings } from '../api/settings'
@@ -60,7 +61,7 @@ export default function Converter() {
   useEffect(() => {
     const connect = () => {
       if (esRef.current) esRef.current.close()
-      const es = new EventSource('/api/v1/converter/stream')
+      const es = new EventSource(getStreamUrl('/api/v1/converter/stream'))
       es.onmessage = (e) => {
         try {
           const data: ConversionJob[] = JSON.parse(e.data)

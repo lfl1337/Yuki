@@ -99,18 +99,25 @@ pub fn run() {
                 });
             }
 
-            // Health-check thread: poll .runtime_port for up to 10s
+            // Health-check thread: poll .runtime_port for up to 10s,
+            // then emit the discovered port + ready signal to the frontend.
             let rp = runtime_port_path.clone();
             let ah = app_handle.clone();
             std::thread::spawn(move || {
                 for _ in 0..20 {
                     std::thread::sleep(Duration::from_millis(500));
                     if rp.exists() {
+                        let port = std::fs::read_to_string(&rp)
+                            .unwrap_or_default()
+                            .trim()
+                            .to_string();
+                        let _ = ah.emit("backend-port", port);
                         let _ = ah.emit("backend-ready", ());
                         return;
                     }
                 }
-                // Timeout: emit anyway so the UI doesn't hang forever
+                // Timeout: fall back to default port so UI doesn't hang forever
+                let _ = ah.emit("backend-port", "9001".to_string());
                 let _ = ah.emit("backend-ready", ());
             });
 
