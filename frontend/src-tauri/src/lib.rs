@@ -14,6 +14,13 @@ use std::sync::Arc;
 
 struct BackendProcess(Mutex<Option<CommandChild>>);
 
+struct DiscoveredPort(Mutex<Option<String>>);
+
+#[tauri::command]
+fn get_backend_port(state: tauri::State<DiscoveredPort>) -> Option<String> {
+    state.0.lock().unwrap().clone()
+}
+
 fn get_runtime_port_path(_app: &AppHandle) -> PathBuf {
     // Always use %APPDATA%\Yuki\.runtime_port — matches run.py's fixed write location.
     let appdata = std::env::var("APPDATA").unwrap_or_default();
@@ -25,6 +32,8 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(BackendProcess(Mutex::new(None)))
+        .manage(DiscoveredPort(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![get_backend_port])
         .setup(|app| {
             let app_handle = app.handle().clone();
             let runtime_port_path = get_runtime_port_path(&app_handle);
@@ -32,10 +41,18 @@ pub fn run() {
             #[cfg(not(debug_assertions))]
             {
                 // --- Production: spawn Python sidecar ---
-                let data_dir = app
-                    .path()
-                    .app_data_dir()
-                    .unwrap_or_else(|_| PathBuf::from("."));
+                // Use %APPDATA%\Yuki — same location Python uses for all data.
+                // app_data_dir() resolves to %APPDATA%\app.yuki.media which may not exist.
+                let data_dir = {
+                    let appdata = std::env::var("APPDATA").unwrap_or_default();
+                    let d = if appdata.is_empty() {
+                        PathBuf::from(".")
+                    } else {
+                        PathBuf::from(&appdata).join("Yuki")
+                    };
+                    let _ = std::fs::create_dir_all(&d);
+                    d
+                };
                 let data_dir_str = data_dir.to_string_lossy().to_string();
 
                 // Kill any leftover backend from a previous crashed session.
@@ -99,7 +116,14 @@ pub fn run() {
             let ah = app_handle.clone();
 
             #[cfg(not(debug_assertions))]
-            let data_dir_for_log_opt: Option<PathBuf> = app_handle.path().app_data_dir().ok();
+            let data_dir_for_log_opt: Option<PathBuf> = {
+                let appdata = std::env::var("APPDATA").unwrap_or_default();
+                if appdata.is_empty() { None } else {
+                    let d = PathBuf::from(&appdata).join("Yuki");
+                    let _ = std::fs::create_dir_all(&d);
+                    Some(d)
+                }
+            };
             #[cfg(debug_assertions)]
             let data_dir_for_log_opt: Option<PathBuf> = None;
 
@@ -123,6 +147,9 @@ pub fn run() {
                             let trimmed = content.trim().to_string();
                             if trimmed.parse::<u16>().is_ok() {
                                 write_log(&format!("Port found: {}", trimmed));
+                                // Store for invoke-based discovery (race-condition-free)
+                                *ah.state::<DiscoveredPort>().0.lock().unwrap() = Some(trimmed.clone());
+                                // Also emit as secondary mechanism
                                 let _ = ah.emit("backend-port", &trimmed);
                                 // Verify backend is actually listening before signalling ready
                                 let url = format!("http://127.0.0.1:{}/health", trimmed);

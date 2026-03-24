@@ -106,7 +106,7 @@ export default function App() {
     let unlistenError: (() => void) | undefined;
     let mounted = true;
 
-    // Receive the port Rust discovers from .runtime_port
+    // Secondary: event listeners (may be missed due to timing race, but kept as bonus)
     import("@tauri-apps/api/event").then(async ({ listen }) => {
       unlistenPort = await listen<string>("backend-port", (event) => {
         setPort(event.payload);
@@ -119,28 +119,35 @@ export default function App() {
       });
     });
 
-    // Independent health poll — fires setBackendReady even if Tauri event was missed.
-    // Uses getBase() so it picks up any port update from the event above.
-    const poll = async () => {
+    // Primary: invoke-based port discovery — frontend asks when ready, no race condition.
+    // Rust stores the port in DiscoveredPort state; we poll until it appears.
+    const pollPort = async () => {
+      const { invoke } = await import("@tauri-apps/api/core");
       for (let i = 0; i < 60 && mounted; i++) {
-        const online = await checkBackendOnline();
-        if (online) {
+        const port = await invoke<string | null>("get_backend_port").catch(() => null);
+        if (port) {
+          setPort(port);
+          // Now health-poll on the correct port
+          for (let j = 0; j < 60 && mounted; j++) {
+            if (await checkBackendOnline()) {
+              if (mounted) setBackendReady(true);
+              return;
+            }
+            await new Promise<void>(r => setTimeout(r, 500));
+          }
+          // Health check timed out but port found — show UI anyway
           if (mounted) setBackendReady(true);
           return;
         }
         await new Promise<void>(r => setTimeout(r, 500));
       }
+      // 30s total — backend never appeared
+      if (mounted) setBackendError("Backend did not start within 30 seconds.");
     };
-    poll();
-
-    // Hard fallback after 15s so UI never hangs forever
-    const fallback = setTimeout(() => {
-      if (mounted) setBackendError("Backend did not start within 15 seconds.");
-    }, 15_000);
+    pollPort();
 
     return () => {
       mounted = false;
-      clearTimeout(fallback);
       unlistenPort?.();
       unlistenReady?.();
       unlistenError?.();
