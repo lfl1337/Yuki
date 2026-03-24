@@ -8,7 +8,8 @@
     "dev:frontend": "tauri dev",
     "dev": "concurrently --kill-others-on-fail \"npm:dev:backend\" \"npm:dev:frontend\"",
     "vite": "vite",
-    "build": "tauri build",
+    "build": "vite build",
+    "tauri": "tauri build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
