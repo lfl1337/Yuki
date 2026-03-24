@@ -3,6 +3,7 @@ Yuki — Universal Media Downloader & MP3 Suite
 Global configuration, constants, and paths.
 """
 
+import os
 from pathlib import Path
 
 APP_NAME = "Yuki"
@@ -34,7 +35,10 @@ FFMPEG_PATH = BASE_DIR / "ffmpeg" / "ffmpeg.exe"
 FFPROBE_PATH = BASE_DIR / "ffmpeg" / "ffprobe.exe"
 ASSETS_DIR = BASE_DIR / "assets"
 LOCALES_DIR = BASE_DIR / "locales"
-DATA_DIR = BASE_DIR / "data"
+
+# User-data directory — always in %APPDATA%\Yuki so it is writable even
+# when the app is installed to Program Files and survives reinstalls.
+DATA_DIR = Path(os.getenv("APPDATA") or (Path.home() / "AppData" / "Roaming")) / "Yuki"
 LOG_FILE = DATA_DIR / "yuki.log"
 HISTORY_FILE = DATA_DIR / "history.json"
 SETTINGS_FILE = DATA_DIR / "settings.json"
