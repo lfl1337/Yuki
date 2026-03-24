@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { Settings as SettingsIcon } from 'lucide-react'
-import { checkBackendOnline } from '../api/client'
+import { getBase } from '../api/client'
 
 const NAV_ITEMS = [
   { to: '/', label: 'nav.downloader', kanji: '載', exact: true },
@@ -18,7 +18,17 @@ export default function Sidebar() {
   const [online, setOnline] = useState(false)
 
   useEffect(() => {
-    const check = async () => setOnline(await checkBackendOnline())
+    const check = async () => {
+      try {
+        const res = await fetch(`${getBase()}/health`, {
+          credentials: 'omit',
+          signal: AbortSignal.timeout(3000),
+        })
+        setOnline(res.ok)
+      } catch {
+        setOnline(false)
+      }
+    }
     check()
     const id = setInterval(check, 3000)
     return () => clearInterval(id)
