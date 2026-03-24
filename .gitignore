@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+dist/
+build/
+*.spec
+.env
+data/history.json
+data/settings.json
+data/yuki.log
+ffmpeg/
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
