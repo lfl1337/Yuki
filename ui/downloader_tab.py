@@ -2,6 +2,7 @@
 Main Downloader tab — Hime card style UI.
 """
 
+import logging
 import threading
 from pathlib import Path
 from tkinter import filedialog
@@ -16,6 +17,8 @@ from locales.translator import t
 from ui.widgets.link_input import LinkInput
 from ui.widgets.preview_card import PreviewCard
 from ui.queue_panel import QueuePanel
+
+logger = logging.getLogger(__name__)
 
 C = UI_COLORS
 
@@ -290,6 +293,7 @@ class DownloaderTab(ctk.CTkFrame):
         result = detect_platform(url)
 
         if not result["valid"]:
+            logger.warning("Invalid URL: %s", url)
             self._detect_label.configure(text=t("error_invalid_url"), text_color=C["error"])
             self._link_input.set_state("invalid")
             self._preview.hide()
@@ -297,6 +301,7 @@ class DownloaderTab(ctk.CTkFrame):
 
         self._link_input.set_state("valid")
         platform = result["platform"]
+        logger.info("URL pasted: %s  platform=%s", url, platform)
         self._detect_label.configure(
             text=t("platform_detected", platform=platform),
             text_color=C["text_muted"],
@@ -368,6 +373,7 @@ class DownloaderTab(ctk.CTkFrame):
             quality=quality,
             info=info,
         )
+        logger.info("Download queued: %s", info.get("title", info.get("url", "")))
 
         self._link_input.set("")
         self._link_input.set_state("normal")

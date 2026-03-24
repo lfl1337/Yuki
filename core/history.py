@@ -42,6 +42,7 @@ class HistoryManager:
             if len(self._entries) > MAX_HISTORY_ENTRIES:
                 self._entries = self._entries[:MAX_HISTORY_ENTRIES]
             self._save()
+            logger.info("History entry added: %s (%s)", entry.get("title",""), entry.get("filepath",""))
         return entry
 
     def get_all(self) -> List[dict]:
@@ -112,6 +113,7 @@ class HistoryManager:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             self._entries = data if isinstance(data, list) else []
+            logger.debug("History loaded: %d entries", len(self._entries))
         except Exception as exc:
             logger.error("Failed to load history: %s", exc)
             self._entries = []

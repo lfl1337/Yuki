@@ -24,7 +24,7 @@ class _MemoryHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         entry = {
-            "timestamp": self.formatter.formatTime(record, "%H:%M:%S") if self.formatter else record.asctime,
+            "timestamp": self.formatter.formatTime(record, "%Y-%m-%d %H:%M:%S") if self.formatter else record.asctime,
             "level": record.levelname,
             "module": record.name,
             "message": record.getMessage(),
@@ -46,6 +46,7 @@ class _MemoryHandler(logging.Handler):
 
 
 _memory_handler: Optional[_MemoryHandler] = None
+_log_file_path: Optional[Path] = None
 
 
 def install(log_file: Optional[Path] = None):
@@ -53,26 +54,28 @@ def install(log_file: Optional[Path] = None):
     Set up root logger with memory + console + rotating file handlers.
     Call once at app startup.
     """
-    global _memory_handler
+    global _memory_handler, _log_file_path
+    _log_file_path = log_file
 
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     root.handlers.clear()
 
     # Memory handler — captures everything for the in-app viewer
+    _fmt = logging.Formatter(
+        "%(asctime)s.%(msecs)03d [%(levelname)-8s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
     _memory_handler = _MemoryHandler(maxlen=_MAX_ENTRIES)
     _memory_handler.setLevel(logging.DEBUG)
-    _memory_handler.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    )
+    _memory_handler.setFormatter(_fmt)
     root.addHandler(_memory_handler)
 
     # Console handler
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(logging.INFO)
-    console.setFormatter(
-        logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-    )
+    console.setFormatter(_fmt)
     root.addHandler(console)
 
     # Rotating file handler
@@ -80,12 +83,10 @@ def install(log_file: Optional[Path] = None):
         try:
             log_file.parent.mkdir(parents=True, exist_ok=True)
             fh = RotatingFileHandler(
-                log_file, maxBytes=5 * 1024 * 1024, backupCount=3, encoding="utf-8"
+                log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"
             )
             fh.setLevel(logging.DEBUG)
-            fh.setFormatter(
-                logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-            )
+            fh.setFormatter(_fmt)
             root.addHandler(fh)
         except Exception:
             pass
@@ -124,3 +125,8 @@ def set_on_new_entry(callback: Optional[Callable]):
     """Register a callback fired on each new log entry (called from logging thread)."""
     if _memory_handler:
         _memory_handler._on_new_entry = callback
+
+
+def get_log_file_path() -> Optional[Path]:
+    """Return the path of the active log file, or None."""
+    return _log_file_path

@@ -14,25 +14,31 @@ if sys.platform == "win32" and not sys.stdout:
 import ctypes
 import ctypes.wintypes
 
+_MUTEX_NAME = "YukiMediaSuite_SingleInstance_Mutex"
+_SYNCHRONIZE = 0x100000
+
 
 def ensure_single_instance():
-    mutex_name = "YukiMediaSuite_SingleInstance_Mutex"
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
-    mutex = kernel32.CreateMutexW(None, False, mutex_name)
-    last_error = ctypes.get_last_error()
-    if last_error == 183:  # ERROR_ALREADY_EXISTS
+
+    # Try to open an existing mutex — if it succeeds, another instance is alive
+    existing = kernel32.OpenMutexW(_SYNCHRONIZE, False, _MUTEX_NAME)
+    if existing:
+        kernel32.CloseHandle(existing)
         import tkinter as tk
         from tkinter import messagebox
         root = tk.Tk()
         root.withdraw()
         messagebox.showinfo("Yuki", "Yuki is already running.")
         root.destroy()
-        ctypes.windll.kernel32.CloseHandle(mutex)
         sys.exit(0)
-    return mutex  # keep reference alive — mutex released when process exits
+
+    # Create owned mutex — bInitialOwner=True so we hold it immediately
+    mutex = kernel32.CreateMutexW(None, True, _MUTEX_NAME)
+    return mutex  # keep reference alive — OS releases when process exits
 
 
-_mutex = ensure_single_instance()  # module-level so it stays alive for the process lifetime
+_mutex = ensure_single_instance()
 
 import json
 import logging
@@ -49,8 +55,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from config import (
-    APP_NAME, VERSION, DATA_DIR, SETTINGS_FILE, LOG_FILE,
-    DEFAULT_SETTINGS, ASSETS_DIR,
+    APP_NAME, VERSION, BASE_DIR, DATA_DIR, SETTINGS_FILE, LOG_FILE,
+    DEFAULT_SETTINGS, ASSETS_DIR, FFMPEG_PATH,
 )
 
 
@@ -138,40 +144,65 @@ def _gen_icon():
 
 
 def main():
+    import platform
     _setup_logging()
     logger = logging.getLogger("yuki.main")
-    logger.info("Starting %s v%s", APP_NAME, VERSION)
 
-    settings = _load_settings()
-    _generate_assets()
+    logger.info("Single instance check passed")
 
-    # Apply theme before creating the window
+    # ---- Diagnostic startup block ----
+    logger.info("=" * 50)
+    logger.info("Yuki v%s starting", VERSION)
+    logger.info("OS: Windows %s", platform.version())
+    logger.info("Python: %s", sys.version.split()[0])
+    logger.info("Install dir: %s", BASE_DIR)
+    logger.info("Data dir: %s", DATA_DIR)
+    logger.info("ffmpeg: %s", "found" if FFMPEG_PATH.exists() else "MISSING")
+    logger.info("=" * 50)
+
     try:
-        import customtkinter as ctk
-        theme = settings.get("theme", "dark")
-        if theme == "system":
-            try:
-                import darkdetect
-                theme = (darkdetect.theme() or "dark").lower()
-            except Exception:
-                theme = "dark"
-        ctk.set_appearance_mode(theme)
-        ctk.set_default_color_theme("blue")
-    except ImportError as exc:
-        logger.error("customtkinter not installed: %s", exc)
-        sys.exit(1)
+        settings = _load_settings()
+        logger.info("Settings loaded from %s", SETTINGS_FILE)
+        logger.info("Download dir: %s", settings.get("default_download_dir"))
+        _generate_assets()
 
-    from ui.main_window import MainWindow
-    from core.auto_updater import AutoUpdater
+        # Apply theme before creating the window
+        try:
+            import customtkinter as ctk
+            theme = settings.get("theme", "dark")
+            if theme == "system":
+                try:
+                    import darkdetect
+                    theme = (darkdetect.theme() or "dark").lower()
+                except Exception:
+                    theme = "dark"
+            ctk.set_appearance_mode(theme)
+            ctk.set_default_color_theme("blue")
+            logger.debug("Theme applied: %s", theme)
+        except ImportError as exc:
+            logger.critical("Startup failed: customtkinter not installed: %s", exc)
+            sys.exit(1)
 
-    app = MainWindow(settings=settings)
+        from ui.main_window import MainWindow
+        from core.auto_updater import AutoUpdater
 
-    updater = AutoUpdater()
-    updater.check_in_background()
+        app = MainWindow(settings=settings)
+        logger.info("Window created, showing UI")
 
-    app.mainloop()
+        updater = AutoUpdater()
+        updater.check_in_background()
 
-    logger.info("Yuki exited cleanly")
+        app.mainloop()
+
+    except Exception as exc:
+        logging.getLogger("yuki.main").critical("Startup failed: %s", exc, exc_info=True)
+        raise
+    finally:
+        logger.info("App shutdown initiated")
+        if _mutex:
+            ctypes.windll.kernel32.ReleaseMutex(_mutex)
+            ctypes.windll.kernel32.CloseHandle(_mutex)
+        logger.info("App closed cleanly")
 
 
 if __name__ == "__main__":

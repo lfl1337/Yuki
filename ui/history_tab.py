@@ -3,6 +3,7 @@ History tab — card list with search, filter pills, and action buttons.
 """
 
 import io
+import logging
 import os
 import subprocess
 import threading
@@ -15,6 +16,8 @@ import customtkinter as ctk
 from config import UI_COLORS
 from core.history import HistoryManager
 from locales.translator import t
+
+logger = logging.getLogger(__name__)
 
 C = UI_COLORS
 
@@ -314,6 +317,7 @@ class HistoryTab(ctk.CTkFrame):
         self._entry_widgets.clear()
 
         entries = self._current_entries
+        logger.debug("History loaded %d entries into UI", len(entries))
         if not entries:
             self._empty_label.pack(pady=60)
             return
@@ -397,10 +401,17 @@ class HistoryTab(ctk.CTkFrame):
     def _play(self, entry: dict):
         fp = self._find_file(entry)
         if fp:
+            logger.info("Play requested: %s", fp)
             self._on_play({**entry, "filepath": fp})
+        else:
+            logger.warning("File not found for history entry: %s", entry.get("filepath", ""))
 
     def _edit(self, entry: dict):
         fp = self._find_file(entry)
+        if fp:
+            logger.info("Edit tags requested: %s", fp)
+        else:
+            logger.warning("File not found for history entry: %s", entry.get("filepath", ""))
         self._on_edit_tags(fp or "")
 
     def _open_folder(self, entry: dict):
