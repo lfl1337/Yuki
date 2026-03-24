@@ -1,6 +1,6 @@
 {
   "productName": "Yuki",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "identifier": "app.yuki.media",
   "build": {
     "beforeDevCommand": "npm run vite",

@@ -31,6 +31,16 @@ def _ytdlp_latest() -> str:
         return _ytdlp_version()
 
 
+@router.get("/check-app")
+async def check_app():
+    result = await asyncio.to_thread(check_now)
+    return {
+        "has_update": result["has_update"],
+        "latest_version": result["latest"],
+        "current_version": result["current"],
+    }
+
+
 @router.get("/status")
 async def status():
     app_status = await asyncio.to_thread(check_now)

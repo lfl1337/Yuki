@@ -16,7 +16,7 @@ from packaging.version import Version
 
 logger = logging.getLogger("yuki.auto_updater")
 
-VERSION = "2.0.0"
+VERSION = "2.1.2"
 GITHUB_REPO = "lfl1337/Yuki"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
@@ -100,15 +100,12 @@ def _run() -> None:
 def _launch_installer(installer: Path) -> None:
     try:
         bat = Path(tempfile.gettempdir()) / f"yuki_update_{uuid.uuid4().hex[:8]}.bat"
-        exe = str(installer)
-        current = sys.executable
         bat.write_text(
             "@echo off\r\n"
             "timeout /t 2 /nobreak >nul\r\n"
             "taskkill /f /im Yuki.exe >nul 2>&1\r\n"
-            f'start "" "{exe}" /S\r\n'
-            "timeout /t 5 /nobreak >nul\r\n"
-            f'start "" "{current}" --updated\r\n'
+            "taskkill /f /im yuki-backend-x86_64-pc-windows-msvc.exe >nul 2>&1\r\n"
+            f'start "" "{installer}" /S\r\n'
             "exit\r\n",
             encoding="utf-8",
         )
