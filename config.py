@@ -6,7 +6,7 @@ Global configuration, constants, and paths.
 from pathlib import Path
 
 APP_NAME = "Yuki"
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 
 UI_COLORS = {
     "bg_primary":    "#0D0D12",
