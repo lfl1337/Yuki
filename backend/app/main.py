@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Yuki Backend",
-    version="2.0.3",
+    version="2.0.4",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None,
@@ -58,11 +58,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:1420",
-        "http://127.0.0.1:1420",
         "http://localhost:1421",
+        "http://127.0.0.1:1420",
         "http://127.0.0.1:1421",
         "tauri://localhost",
         "https://tauri.localhost",
+        "http://tauri.localhost",
+        "http://localhost",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],

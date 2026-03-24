@@ -102,32 +102,30 @@ export default function App() {
     if (import.meta.env.DEV) return;
 
     let unlistenPort: (() => void) | undefined;
-    let unlistenReady: (() => void) | undefined;
     let unlistenError: (() => void) | undefined;
     let mounted = true;
 
-    // Secondary: event listeners (may be missed due to timing race, but kept as bonus)
+    // Bonus: event-based port update (harmless if received, missed events are OK)
+    // NOTE: backend-ready event listener intentionally removed — it raced with pollPort()
+    // and could set backendReady=true before setPort() was called, causing 9001 fallback.
     import("@tauri-apps/api/event").then(async ({ listen }) => {
       unlistenPort = await listen<string>("backend-port", (event) => {
         setPort(event.payload);
-      });
-      unlistenReady = await listen("backend-ready", () => {
-        if (mounted) setBackendReady(true);
       });
       unlistenError = await listen<string>("backend-error", (event) => {
         if (mounted) setBackendError(event.payload);
       });
     });
 
-    // Primary: invoke-based port discovery — frontend asks when ready, no race condition.
-    // Rust stores the port in DiscoveredPort state; we poll until it appears.
+    // Primary (sole gatekeeper): invoke port → setPort() → health check → setBackendReady()
+    // Guaranteed order ensures setPort() always runs before the UI renders.
     const pollPort = async () => {
       const { invoke } = await import("@tauri-apps/api/core");
       for (let i = 0; i < 60 && mounted; i++) {
         const port = await invoke<string | null>("get_backend_port").catch(() => null);
         if (port) {
           setPort(port);
-          // Now health-poll on the correct port
+          // Health-poll on the correct port
           for (let j = 0; j < 60 && mounted; j++) {
             if (await checkBackendOnline()) {
               if (mounted) setBackendReady(true);
@@ -135,7 +133,7 @@ export default function App() {
             }
             await new Promise<void>(r => setTimeout(r, 500));
           }
-          // Health check timed out but port found — show UI anyway
+          // Port found but health timed out — show UI anyway
           if (mounted) setBackendReady(true);
           return;
         }
@@ -149,7 +147,6 @@ export default function App() {
     return () => {
       mounted = false;
       unlistenPort?.();
-      unlistenReady?.();
       unlistenError?.();
     };
   }, []);
