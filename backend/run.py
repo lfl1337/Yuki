@@ -51,10 +51,13 @@ def main():
     port = find_free_port(start=settings.port)
     settings.port = port
 
-    # Write port file so Vite proxy and Tauri can discover it
-    runtime_port_file = Path(__file__).parent / ".runtime_port"
+    # Write port file to data_dir — Tauri reads it from app_data_dir(),
+    # which is the same directory passed via --data-dir. Do NOT write to
+    # Path(__file__).parent: in a PyInstaller onefile exe that resolves to
+    # the install dir (AppData\Local\Yuki), not the data dir Tauri reads.
+    runtime_port_file = Path(data_dir) / ".runtime_port"
     runtime_port_file.write_text(str(port), encoding="utf-8")
-    logger.info("Backend port: %d (written to .runtime_port)", port)
+    logger.info("Backend port: %d (written to %s)", port, runtime_port_file)
 
     import uvicorn
 
@@ -68,7 +71,7 @@ def main():
         )
     finally:
         try:
-            runtime_port_file.unlink(missing_ok=True)
+            runtime_port_file.unlink(missing_ok=True)  # type: ignore[arg-type]
         except Exception:
             pass
         logger.info("Backend stopped")
