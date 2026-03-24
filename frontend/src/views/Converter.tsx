@@ -59,6 +59,8 @@ export default function Converter() {
 
   // SSE for conversion progress
   useEffect(() => {
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
     const connect = () => {
       if (esRef.current) esRef.current.close()
       const es = new EventSource(getStreamUrl('/api/v1/converter/stream'))
@@ -74,12 +76,16 @@ export default function Converter() {
       }
       es.onerror = () => {
         es.close()
-        setTimeout(connect, 3000)
+        reconnectTimer = setTimeout(connect, 2000)
       }
       esRef.current = es
     }
+
     connect()
-    return () => esRef.current?.close()
+    return () => {
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer)
+      esRef.current?.close()
+    }
   }, [])
 
   const addFiles = useCallback((paths: string[]) => {

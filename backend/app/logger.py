@@ -67,6 +67,8 @@ def setup_logging(log_file: Path) -> None:
                   "httpx", "httpcore", "multipart",
                   "sse_starlette", "sse_starlette.sse"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
+    # ConnectionResetError on SSE disconnect is normal — silence asyncio noise
+    logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 
 def get_entries() -> list:

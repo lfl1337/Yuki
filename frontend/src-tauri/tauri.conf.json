@@ -9,6 +9,7 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Yuki — Media Suite",
@@ -17,7 +18,8 @@
         "minWidth": 800,
         "minHeight": 600,
         "decorations": true,
-        "resizable": true
+        "resizable": true,
+        "devtools": true
       }
     ],
     "security": {

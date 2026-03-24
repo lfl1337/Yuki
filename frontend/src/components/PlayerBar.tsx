@@ -28,6 +28,8 @@ export default function PlayerBar() {
   useEffect(() => {
     if (!backendOnline) return
 
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+
     const connect = () => {
       if (esRef.current) esRef.current.close()
       const es = new EventSource(getStreamUrl('/api/v1/player/stream'))
@@ -49,13 +51,16 @@ export default function PlayerBar() {
       }
       es.onerror = () => {
         es.close()
-        setTimeout(connect, 3000)
+        reconnectTimer = setTimeout(connect, 2000)
       }
       esRef.current = es
     }
 
     connect()
-    return () => esRef.current?.close()
+    return () => {
+      if (reconnectTimer !== null) clearTimeout(reconnectTimer)
+      esRef.current?.close()
+    }
   }, [backendOnline, setPlayerState])
 
   const handlePlayPause = useCallback(async () => {
