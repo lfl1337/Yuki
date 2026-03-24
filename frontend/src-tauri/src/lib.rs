@@ -58,7 +58,6 @@ pub fn run() {
                 ));
 
                 let ah_for_error = app_handle.clone();
-                let data_dir_for_log = data_dir.clone();
 
                 let sidecar_cmd = match app_handle.shell().sidecar("yuki-backend") {
                     Ok(cmd) => cmd,
@@ -100,9 +99,9 @@ pub fn run() {
             let ah = app_handle.clone();
 
             #[cfg(not(debug_assertions))]
-            let data_dir_for_log_opt = Some(data_dir_for_log.clone());
+            let data_dir_for_log_opt: Option<PathBuf> = app_handle.path().app_data_dir().ok();
             #[cfg(debug_assertions)]
-            let data_dir_for_log_opt: Option<std::path::PathBuf> = None;
+            let data_dir_for_log_opt: Option<PathBuf> = None;
 
             std::thread::spawn(move || {
                 let write_log = |msg: &str| {
