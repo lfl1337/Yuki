@@ -41,7 +41,7 @@ def main():
 
     logger = logging.getLogger("yuki.run")
     logger.info("=" * 50)
-    logger.info("Yuki Backend v2.0.0 starting")
+    logger.info("Yuki Backend v2.0.2 starting")
     logger.info("Data dir: %s", data_dir)
     logger.info("Python: %s", sys.version.split()[0])
 
@@ -51,11 +51,12 @@ def main():
     port = find_free_port(start=settings.port)
     settings.port = port
 
-    # Write port file to data_dir — Tauri reads it from app_data_dir(),
-    # which is the same directory passed via --data-dir. Do NOT write to
-    # Path(__file__).parent: in a PyInstaller onefile exe that resolves to
-    # the install dir (AppData\Local\Yuki), not the data dir Tauri reads.
-    runtime_port_file = Path(data_dir) / ".runtime_port"
+    # Port file goes to %APPDATA%\Yuki — always the same location so Tauri
+    # can find it regardless of which data_dir the sidecar receives.
+    _appdata = os.environ.get("APPDATA", "") or str(Path.home() / "AppData" / "Roaming")
+    _port_dir = Path(_appdata) / "Yuki"
+    _port_dir.mkdir(parents=True, exist_ok=True)
+    runtime_port_file = _port_dir / ".runtime_port"
     runtime_port_file.write_text(str(port), encoding="utf-8")
     logger.info("Backend port: %d (written to %s)", port, runtime_port_file)
 

@@ -8,40 +8,16 @@ use tauri_plugin_shell::ShellExt;
 
 #[cfg(not(debug_assertions))]
 use std::fs::OpenOptions;
-#[cfg(not(debug_assertions))]
 use std::io::Write;
 #[cfg(not(debug_assertions))]
 use std::sync::Arc;
 
 struct BackendProcess(Mutex<Option<CommandChild>>);
 
-#[allow(unused_variables)]
-fn get_runtime_port_path(app: &AppHandle) -> PathBuf {
-    // In dev: read from backend/.runtime_port relative to project root
-    // In release: read from sidecar working dir (AppData/Yuki)
-    #[cfg(debug_assertions)]
-    {
-        // project_root/backend/.runtime_port
-        let exe = std::env::current_exe().unwrap_or_default();
-        let project_root = exe
-            .parent() // target/debug
-            .and_then(|p| p.parent()) // target
-            .and_then(|p| p.parent()) // frontend
-            .and_then(|p| p.parent()) // yuki root
-            .unwrap_or(&PathBuf::from("."))
-            .to_path_buf();
-        project_root.join("backend").join(".runtime_port")
-    }
-    #[cfg(not(debug_assertions))]
-    {
-        let data_dir = app
-            .path()
-            .app_data_dir()
-            .unwrap_or_else(|_| PathBuf::from("."));
-        // The backend writes .runtime_port to the data_dir it receives
-        // via --data-dir, which is exactly app_data_dir().
-        data_dir.join(".runtime_port")
-    }
+fn get_runtime_port_path(_app: &AppHandle) -> PathBuf {
+    // Always use %APPDATA%\Yuki\.runtime_port — matches run.py's fixed write location.
+    let appdata = std::env::var("APPDATA").unwrap_or_default();
+    PathBuf::from(&appdata).join("Yuki").join(".runtime_port")
 }
 
 pub fn run() {
@@ -81,13 +57,23 @@ pub fn run() {
                         .ok(),
                 ));
 
-                let (mut rx, child) = app_handle
-                    .shell()
-                    .sidecar("yuki-backend")
-                    .expect("yuki-backend sidecar not found")
-                    .args(["--data-dir", &data_dir_str])
-                    .spawn()
-                    .expect("Failed to spawn yuki-backend");
+                let ah_for_error = app_handle.clone();
+                let data_dir_for_log = data_dir.clone();
+
+                let sidecar_cmd = match app_handle.shell().sidecar("yuki-backend") {
+                    Ok(cmd) => cmd,
+                    Err(e) => {
+                        let _ = ah_for_error.emit("backend-error", format!("Sidecar not found: {e}"));
+                        return Ok(());
+                    }
+                };
+                let (mut rx, child) = match sidecar_cmd.args(["--data-dir", &data_dir_str]).spawn() {
+                    Ok(pair) => pair,
+                    Err(e) => {
+                        let _ = ah_for_error.emit("backend-error", format!("Spawn failed: {e}"));
+                        return Ok(());
+                    }
+                };
 
                 *app_handle.state::<BackendProcess>().0.lock().unwrap() = Some(child);
 
@@ -112,7 +98,25 @@ pub fn run() {
             // then emit the discovered port + ready signal to the frontend.
             let rp = runtime_port_path.clone();
             let ah = app_handle.clone();
+
+            #[cfg(not(debug_assertions))]
+            let data_dir_for_log_opt = Some(data_dir_for_log.clone());
+            #[cfg(debug_assertions)]
+            let data_dir_for_log_opt: Option<std::path::PathBuf> = None;
+
             std::thread::spawn(move || {
+                let write_log = |msg: &str| {
+                    if let Some(ref d) = data_dir_for_log_opt {
+                        if let Ok(mut f) = std::fs::OpenOptions::new()
+                            .create(true).append(true)
+                            .open(d.join("yuki-tauri.log")) {
+                            let _ = writeln!(f, "[Tauri] {}", msg);
+                        }
+                    }
+                };
+
+                write_log(&format!("Polling for port file: {:?}", rp));
+
                 for _ in 0..150 {
                     std::thread::sleep(Duration::from_millis(100));
                     if rp.exists() {
@@ -121,6 +125,7 @@ pub fn run() {
                             .trim()
                             .to_string();
                         if !port.is_empty() {
+                            write_log(&format!("Found port: {}", port));
                             let _ = ah.emit("backend-port", port);
                             let _ = ah.emit("backend-ready", ());
                             return;
@@ -128,6 +133,7 @@ pub fn run() {
                     }
                 }
                 // Timeout: fall back to default port so UI doesn't hang forever
+                write_log("Timeout: port file not found after 15s, using 9001");
                 let _ = ah.emit("backend-port", "9001".to_string());
                 let _ = ah.emit("backend-ready", ());
             });
@@ -135,8 +141,8 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                // Kill backend on window close
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
+                // Kill tracked sidecar child process
                 if let Some(child) = window
                     .app_handle()
                     .state::<BackendProcess>()
@@ -146,6 +152,15 @@ pub fn run() {
                     .take()
                 {
                     let _ = child.kill();
+                }
+                // Taskkill as backup — no console window
+                #[cfg(target_os = "windows")]
+                {
+                    use std::os::windows::process::CommandExt;
+                    let _ = std::process::Command::new("taskkill")
+                        .args(["/f", "/im", "yuki-backend-x86_64-pc-windows-msvc.exe"])
+                        .creation_flags(0x08000000)
+                        .spawn();
                 }
             }
         })

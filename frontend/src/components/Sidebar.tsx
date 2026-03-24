@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store'
 import { Settings as SettingsIcon } from 'lucide-react'
+import { checkBackendOnline } from '../api/client'
 
 const NAV_ITEMS = [
   { to: '/', label: 'nav.downloader', kanji: '載', exact: true },
@@ -12,7 +14,15 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const { t } = useTranslation()
-  const { backendOnline, setSettingsOpen } = useStore()
+  const { setSettingsOpen } = useStore()
+  const [online, setOnline] = useState(false)
+
+  useEffect(() => {
+    const check = async () => setOnline(await checkBackendOnline())
+    check()
+    const id = setInterval(check, 3000)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <aside className="w-[180px] flex-shrink-0 flex flex-col bg-bg-secondary border-r border-border h-full">
@@ -55,10 +65,10 @@ export default function Sidebar() {
         <div className="flex items-center gap-2 px-3 py-1">
           <span
             className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              backendOnline ? 'bg-green-500' : 'bg-red-500'
+              online ? 'bg-green-500' : 'bg-red-500'
             }`}
           />
-          <span className="text-xs text-zinc-500">v2.0.0</span>
+          <span className="text-xs text-zinc-500">v2.0.2</span>
         </div>
       </div>
     </aside>

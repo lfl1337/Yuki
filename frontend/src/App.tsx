@@ -23,6 +23,25 @@ function StartupSplash() {
   );
 }
 
+function ErrorSplash({ message }: { message: string }) {
+  return (
+    <div className="flex h-screen items-center justify-center bg-bg-primary flex-col gap-4 px-8 text-center">
+      <div className="text-5xl text-red-500 font-bold">✕</div>
+      <div className="text-white text-lg font-semibold">Backend failed to start</div>
+      <div className="text-zinc-400 text-sm max-w-md">{message}</div>
+      <div className="text-zinc-500 text-xs mt-1">
+        Logs: %APPDATA%\Yuki\yuki-tauri.log
+      </div>
+      <button
+        onClick={() => window.location.reload()}
+        className="mt-2 px-5 py-2 rounded-xl bg-accent text-white text-sm hover:bg-accent-hover transition-colors"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 function AppShell() {
   const { settingsOpen, setBackendOnline, setSettingsOpen } = useStore();
 
@@ -77,20 +96,57 @@ function AppShell() {
 
 export default function App() {
   const [backendReady, setBackendReady] = useState(import.meta.env.DEV);
+  const [backendError, setBackendError] = useState<string | null>(null);
 
   useEffect(() => {
     if (import.meta.env.DEV) return;
-    // Production: receive port from Rust, then signal ready
-    import("@tauri-apps/api/event").then(({ listen }) => {
-      listen<string>("backend-port", (event) => {
+
+    let unlistenPort: (() => void) | undefined;
+    let unlistenReady: (() => void) | undefined;
+    let unlistenError: (() => void) | undefined;
+    let mounted = true;
+
+    // Receive the port Rust discovers from .runtime_port
+    import("@tauri-apps/api/event").then(async ({ listen }) => {
+      unlistenPort = await listen<string>("backend-port", (event) => {
         setPort(event.payload);
       });
-      listen("backend-ready", () => setBackendReady(true));
+      unlistenReady = await listen("backend-ready", () => {
+        if (mounted) setBackendReady(true);
+      });
+      unlistenError = await listen<string>("backend-error", (event) => {
+        if (mounted) setBackendError(event.payload);
+      });
     });
-    // Safety fallback after 15s
-    const fallback = setTimeout(() => setBackendReady(true), 15_000);
-    return () => clearTimeout(fallback);
+
+    // Independent health poll — fires setBackendReady even if Tauri event was missed.
+    // Uses getBase() so it picks up any port update from the event above.
+    const poll = async () => {
+      for (let i = 0; i < 60 && mounted; i++) {
+        const online = await checkBackendOnline();
+        if (online) {
+          if (mounted) setBackendReady(true);
+          return;
+        }
+        await new Promise<void>(r => setTimeout(r, 500));
+      }
+    };
+    poll();
+
+    // Hard fallback after 15s so UI never hangs forever
+    const fallback = setTimeout(() => {
+      if (mounted) setBackendError("Backend did not start within 15 seconds.");
+    }, 15_000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(fallback);
+      unlistenPort?.();
+      unlistenReady?.();
+      unlistenError?.();
+    };
   }, []);
 
+  if (backendError) return <ErrorSplash message={backendError} />;
   return backendReady ? <AppShell /> : <StartupSplash />;
 }

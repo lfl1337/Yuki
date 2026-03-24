@@ -3,7 +3,8 @@ import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { taggerApi } from '../api/tagger'
 import { useStore } from '../store'
-import { Pencil, RotateCcw, Save, Image, Link, Wand2 } from 'lucide-react'
+import { Pencil, RotateCcw, Save, Image, Link, Wand2, FolderOpen } from 'lucide-react'
+import { open as openDialog } from '@tauri-apps/plugin-dialog'
 
 interface Tags {
   title: string
@@ -94,6 +95,16 @@ export default function Editor() {
     setLoading(false)
   }, [])
 
+  const handleOpenFile = async () => {
+    const selected = await openDialog({
+      multiple: false,
+      filters: [{ name: 'Audio', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus'] }],
+    })
+    if (selected && typeof selected === 'string') {
+      loadFile(selected)
+    }
+  }
+
   // Load from navigation state (History → Editor)
   useEffect(() => {
     if (location.state?.filepath) {
@@ -172,6 +183,14 @@ export default function Editor() {
     <div className="flex h-full overflow-hidden">
       {/* Left panel */}
       <div className="w-[280px] flex-shrink-0 border-r border-border p-5 flex flex-col gap-4 overflow-y-auto">
+        {/* Open File */}
+        <button
+          onClick={handleOpenFile}
+          className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-bg-elevated border border-border text-sm text-zinc-400 hover:text-white hover:border-accent transition-colors"
+        >
+          <FolderOpen size={14} />
+          Open File
+        </button>
         {/* Cover art */}
         <div className="flex flex-col items-center gap-3">
           <div className="w-[220px] h-[220px] rounded-2xl overflow-hidden bg-bg-card border border-border flex items-center justify-center">
