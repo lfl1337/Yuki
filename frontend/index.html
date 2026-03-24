@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Yuki — Media Suite</title>
+    <script>
+      (function () {
+        var t = localStorage.getItem('yuki-theme') || 'dark';
+        var d = document.documentElement;
+        if (t === 'dark') { d.classList.add('dark'); d.classList.remove('light'); }
+        else if (t === 'light') { d.classList.remove('dark'); d.classList.add('light'); }
+        else { var p = window.matchMedia('(prefers-color-scheme: dark)').matches; d.classList.toggle('dark', p); d.classList.toggle('light', !p); }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

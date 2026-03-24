@@ -2,22 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── CSS variables — light (default) and dark ── */
+/* ── CSS variables — dark (default) and light ── */
 :root {
-  --bg-primary:        #F4F4F8;
-  --bg-secondary:      #EAEAF0;
-  --bg-card:           #FFFFFF;
-  --bg-elevated:       #E4E4EC;
-  --border:            #CACAD8;
-  --text-1:            #0D0D12;
-  --text-2:            #404060;
-  --text-3:            #7070A0;
-  --scrollbar-track:   #E4E4EC;
-  --scrollbar-thumb:   #B0B0C8;
-  --scrollbar-hover:   #9090B8;
-}
-
-.dark {
   --bg-primary:        #09090b;
   --bg-secondary:      #18181b;
   --bg-card:           #27272a;
@@ -29,6 +15,20 @@
   --scrollbar-track:   #18181b;
   --scrollbar-thumb:   #3f3f46;
   --scrollbar-hover:   #52525b;
+}
+
+.light {
+  --bg-primary:        #F4F4F8;
+  --bg-secondary:      #EAEAF0;
+  --bg-card:           #FFFFFF;
+  --bg-elevated:       #E4E4EC;
+  --border:            #CACAD8;
+  --text-1:            #0D0D12;
+  --text-2:            #404060;
+  --text-3:            #7070A0;
+  --scrollbar-track:   #E4E4EC;
+  --scrollbar-thumb:   #B0B0C8;
+  --scrollbar-hover:   #9090B8;
 }
 
 * {
