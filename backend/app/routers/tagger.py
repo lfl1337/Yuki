@@ -76,9 +76,10 @@ async def read_tags(body: TaggerReadRequest):
 async def write_tags(body: TagsWriteRequest):
     if not Path(body.filepath).exists():
         raise HTTPException(404, f"File not found: {body.filepath}")
-    tags = body.model_dump(exclude={"filepath", "cover_art_b64"})
+    tags = {k: v for k, v in body.model_dump(exclude={"filepath", "cover_art_b64"}).items() if v is not None and str(v).strip() != ''}
     try:
-        await asyncio.to_thread(_tagger.write_tags, body.filepath, tags)
+        if tags:
+            await asyncio.to_thread(_tagger.write_tags, body.filepath, tags)
         # Handle cover art if provided as data URI
         if body.cover_art_b64:
             b64 = body.cover_art_b64

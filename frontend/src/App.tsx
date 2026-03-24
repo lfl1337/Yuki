@@ -131,13 +131,13 @@ export default function App() {
               if (mounted) setBackendReady(true);
               return;
             }
-            await new Promise<void>(r => setTimeout(r, 500));
+            await new Promise<void>(r => setTimeout(r, 200));
           }
           // Port found but health timed out — show UI anyway
           if (mounted) setBackendReady(true);
           return;
         }
-        await new Promise<void>(r => setTimeout(r, 500));
+        await new Promise<void>(r => setTimeout(r, 200));
       }
       // 30s total — backend never appeared
       if (mounted) setBackendError("Backend did not start within 30 seconds.");
