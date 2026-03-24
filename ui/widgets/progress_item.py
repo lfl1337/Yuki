@@ -11,8 +11,10 @@ import customtkinter as ctk
 import requests
 from PIL import Image
 
-from config import QUEUE_THUMB_SIZE, ASSETS_DIR
+from config import QUEUE_THUMB_SIZE, ASSETS_DIR, UI_COLORS
 from locales.translator import t
+
+C = UI_COLORS
 
 
 def _fmt_speed(bps: float) -> str:
@@ -40,23 +42,17 @@ def _fmt_eta(seconds: int) -> str:
 
 
 STATUS_COLORS = {
-    "queued": "gray60",
-    "downloading": "#3D9EF0",
-    "processing": "#F0A83D",
-    "done": "#2FA827",
-    "error": "#E74C3C",
-    "cancelled": "gray50",
+    "queued":      C["text_muted"],
+    "downloading": C["accent"],
+    "processing":  C["warning"],
+    "done":        C["success"],
+    "error":       C["error"],
+    "cancelled":   C["text_muted"],
 }
 
 
 class ProgressItem(ctk.CTkFrame):
-    """
-    Single row in the download queue.
-
-    Callbacks:
-        on_cancel() — user clicked cancel
-        on_retry()  — user clicked retry (after error)
-    """
+    """Single row in the download queue."""
 
     def __init__(
         self,
@@ -70,7 +66,7 @@ class ProgressItem(ctk.CTkFrame):
         on_retry: Optional[Callable] = None,
         **kwargs,
     ):
-        super().__init__(master, corner_radius=8, **kwargs)
+        super().__init__(master, corner_radius=8, fg_color=C["bg_elevated"], **kwargs)
         self._on_cancel = on_cancel or (lambda: None)
         self._on_retry = on_retry or (lambda: None)
         self._title = title
@@ -99,24 +95,31 @@ class ProgressItem(ctk.CTkFrame):
             self,
             text=title,
             font=ctk.CTkFont(size=13, weight="bold"),
+            text_color=C["text_primary"],
             anchor="w",
             wraplength=400,
         )
         self._title_label.grid(row=0, column=1, padx=8, pady=(10, 0), sticky="w")
 
-        # Meta (platform, format, quality)
+        # Meta
         meta = f"{platform}  •  {fmt}  •  {quality}"
         self._meta_label = ctk.CTkLabel(
             self,
             text=meta,
             font=ctk.CTkFont(size=11),
-            text_color="gray60",
+            text_color=C["text_muted"],
             anchor="w",
         )
         self._meta_label.grid(row=1, column=1, padx=8, pady=0, sticky="w")
 
-        # Progress bar
-        self._progress = ctk.CTkProgressBar(self, height=6, corner_radius=3)
+        # Progress bar — 3px height, ACCENT fill
+        self._progress = ctk.CTkProgressBar(
+            self,
+            height=3,
+            corner_radius=2,
+            progress_color=C["accent"],
+            fg_color=C["border"],
+        )
         self._progress.set(0)
         self._progress.grid(row=2, column=1, padx=8, pady=(4, 0), sticky="ew")
 
@@ -138,7 +141,7 @@ class ProgressItem(ctk.CTkFrame):
             status_row,
             text="",
             font=ctk.CTkFont(size=11),
-            text_color="gray60",
+            text_color=C["text_muted"],
         )
         self._speed_label.grid(row=0, column=1, padx=8)
 
@@ -146,7 +149,7 @@ class ProgressItem(ctk.CTkFrame):
             status_row,
             text="",
             font=ctk.CTkFont(size=11),
-            text_color="gray60",
+            text_color=C["text_muted"],
         )
         self._eta_label.grid(row=0, column=2, padx=(0, 8))
 
@@ -159,8 +162,11 @@ class ProgressItem(ctk.CTkFrame):
             text=t("btn_cancel"),
             width=70,
             height=28,
-            fg_color="gray40",
-            hover_color="gray30",
+            fg_color="transparent",
+            border_width=1,
+            border_color=C["border"],
+            text_color=C["text_muted"],
+            hover_color=C["error"],
             command=self._on_cancel,
         )
         self._cancel_btn.pack(pady=2)
@@ -170,6 +176,8 @@ class ProgressItem(ctk.CTkFrame):
             text=t("retry"),
             width=70,
             height=28,
+            fg_color=C["accent"],
+            hover_color=C["accent_hover"],
             command=self._on_retry,
         )
         self._retry_btn.pack(pady=2)
@@ -181,7 +189,7 @@ class ProgressItem(ctk.CTkFrame):
             img = Image.open(path).resize(QUEUE_THUMB_SIZE, Image.LANCZOS)
             return ctk.CTkImage(img, size=QUEUE_THUMB_SIZE)
         except Exception:
-            blank = Image.new("RGB", QUEUE_THUMB_SIZE, "#333333")
+            blank = Image.new("RGB", QUEUE_THUMB_SIZE, C["bg_card"])
             return ctk.CTkImage(blank, size=QUEUE_THUMB_SIZE)
 
     def _fetch_thumb(self, url: str):
@@ -197,7 +205,7 @@ class ProgressItem(ctk.CTkFrame):
             pass
 
     # ------------------------------------------------------------------
-    # Public update methods (call from UI thread via after())
+    # Public update methods
     # ------------------------------------------------------------------
 
     def update_progress(self, percent: float, speed: float, eta: int, filename: str = ""):
@@ -210,10 +218,9 @@ class ProgressItem(ctk.CTkFrame):
         )
 
     def set_status(self, status: str, message: str = ""):
-        """status: queued | downloading | processing | done | error | cancelled"""
         key = f"status_{status}"
         text = t(key) if not message else message
-        color = STATUS_COLORS.get(status, "gray60")
+        color = STATUS_COLORS.get(status, C["text_muted"])
         self._status_label.configure(text=text, text_color=color)
         if status == "done":
             self._progress.set(1.0)

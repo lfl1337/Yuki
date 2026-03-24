@@ -134,12 +134,35 @@ class MP3Tagger:
                 audio.clear()
                 audio.save()
             else:
-                audio = MP3(filepath)
-                if audio.tags:
-                    audio.tags.delete(filepath)
+                from mutagen import File as MuFile
+                audio = MuFile(filepath)
+                if audio and audio.tags:
+                    audio.tags.clear()
+                    audio.save()
         except Exception as exc:
             logger.error("clear_all_tags failed: %s", exc)
             raise
+
+    def rename_file(self, current_path: Union[str, Path], new_name: str) -> tuple:
+        import re
+        current_path = Path(current_path)
+        if not current_path.exists():
+            return (False, "File not found")
+        stripped = new_name.strip()
+        if not stripped:
+            return (False, "Filename cannot be empty")
+        if re.search(r'[\\/:*?"<>|]', stripped):
+            return (False, 'Filename contains illegal characters: \\ / : * ? " < > |')
+        new_path = current_path.parent / (stripped + current_path.suffix)
+        if new_path.exists() and new_path != current_path:
+            return (False, "A file with that name already exists")
+        try:
+            current_path.rename(new_path)
+            return (True, str(new_path))
+        except PermissionError:
+            return (False, "Permission denied — file may be in use")
+        except OSError as exc:
+            return (False, f"Rename failed: {exc}")
 
     # ------------------------------------------------------------------
     # ID3 helpers

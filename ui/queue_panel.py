@@ -104,6 +104,9 @@ class QueuePanel(ctk.CTkScrollableFrame):
                 self._set_status(task.id, "done")
                 task.status = "done"
                 self._on_complete(task, filepath, metadata)
+                widget = self._widgets.get(task.id)
+                if widget:
+                    widget.after(3000, lambda: self._destroy_task(task.id))
 
             def on_error(msg):
                 self._set_status(task.id, "error", msg)
@@ -138,6 +141,7 @@ class QueuePanel(ctk.CTkScrollableFrame):
             if task.downloader:
                 task.downloader.cancel()
             self._set_status(task_id, "cancelled")
+            self.after(500, lambda: self._destroy_task(task_id))
 
     def _retry_task(self, task_id: str):
         task = self._tasks.get(task_id)
@@ -160,6 +164,23 @@ class QueuePanel(ctk.CTkScrollableFrame):
         widget = self._widgets.get(task_id)
         if widget:
             widget.after(0, lambda: widget.set_status(status, message))
+
+    def _destroy_task(self, task_id: str):
+        with self._lock:
+            w = self._widgets.pop(task_id, None)
+            if w:
+                try:
+                    w.destroy()
+                except Exception:
+                    pass
+            self._tasks.pop(task_id, None)
+        if not self._widgets:
+            self._empty_label.pack(pady=40)
+
+    def cancel_all(self):
+        """Cancel all active/queued tasks."""
+        for task_id in list(self._tasks.keys()):
+            self._cancel_task(task_id)
 
     def clear_completed(self):
         to_remove = [

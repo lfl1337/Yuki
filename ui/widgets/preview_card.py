@@ -10,10 +10,12 @@ from typing import Optional
 
 import customtkinter as ctk
 import requests
-from PIL import Image, ImageTk
+from PIL import Image
 
-from config import THUMBNAIL_SIZE, ASSETS_DIR
+from config import THUMBNAIL_SIZE, ASSETS_DIR, UI_COLORS
 from locales.translator import t
+
+C = UI_COLORS
 
 
 def _format_duration(seconds: int) -> str:
@@ -28,19 +30,19 @@ def _format_duration(seconds: int) -> str:
 
 
 PLATFORM_COLORS = {
-    "YouTube": "#FF0000",
-    "YouTube Shorts": "#FF0000",
-    "YouTube Playlist": "#FF0000",
-    "Instagram": "#C13584",
-    "TikTok": "#000000",
-    "Twitter/X": "#1DA1F2",
-    "SoundCloud": "#FF5500",
-    "Spotify": "#1DB954",
-    "Facebook": "#1877F2",
-    "Vimeo": "#1AB7EA",
-    "Dailymotion": "#0066DC",
-    "Twitch": "#9146FF",
-    "Reddit": "#FF4500",
+    "YouTube":          ("#2D0A0A", "#FF4444"),
+    "YouTube Shorts":   ("#2D0A0A", "#FF4444"),
+    "YouTube Playlist": ("#2D0A0A", "#FF4444"),
+    "Instagram":        ("#2D0D1F", "#C13584"),
+    "TikTok":           (C["bg_elevated"], C["text_secondary"]),
+    "Twitter/X":        ("#0A1928", "#1DA1F2"),
+    "SoundCloud":       ("#2D1500", "#FF5500"),
+    "Spotify":          ("#0A1F12", "#1DB954"),
+    "Facebook":         ("#0A1128", "#1877F2"),
+    "Vimeo":            ("#0A1E28", "#1AB7EA"),
+    "Dailymotion":      ("#0A1428", "#0066DC"),
+    "Twitch":           ("#1E0A2D", "#9146FF"),
+    "Reddit":           ("#2D0F00", "#FF4500"),
 }
 
 
@@ -48,12 +50,16 @@ class PreviewCard(ctk.CTkFrame):
     """Displays metadata for a detected URL."""
 
     def __init__(self, master, on_add_to_queue=None, **kwargs):
-        super().__init__(master, corner_radius=12, **kwargs)
+        super().__init__(
+            master, corner_radius=12,
+            fg_color=C["bg_card"],
+            **kwargs,
+        )
         self._on_add = on_add_to_queue or (lambda: None)
         self._thumb_image: Optional[ctk.CTkImage] = None
         self._placeholder = self._load_placeholder()
         self._build()
-        self.grid_remove()  # Hidden by default
+        self.grid_remove()
 
     def _load_placeholder(self) -> Optional[ctk.CTkImage]:
         path = ASSETS_DIR / "placeholder_cover.png"
@@ -61,7 +67,8 @@ class PreviewCard(ctk.CTkFrame):
             img = Image.open(path).resize(THUMBNAIL_SIZE, Image.LANCZOS)
             return ctk.CTkImage(img, size=THUMBNAIL_SIZE)
         except Exception:
-            return None
+            blank = Image.new("RGB", THUMBNAIL_SIZE, C["bg_elevated"])
+            return ctk.CTkImage(blank, size=THUMBNAIL_SIZE)
 
     def _build(self):
         self.columnconfigure(1, weight=1)
@@ -86,6 +93,7 @@ class PreviewCard(ctk.CTkFrame):
             self,
             text="",
             font=ctk.CTkFont(size=14, weight="bold"),
+            text_color=C["text_primary"],
             wraplength=500,
             justify="left",
             anchor="w",
@@ -97,7 +105,7 @@ class PreviewCard(ctk.CTkFrame):
             self,
             text="",
             font=ctk.CTkFont(size=12),
-            text_color="gray60",
+            text_color=C["text_secondary"],
             anchor="w",
         )
         self._meta_label.grid(row=2, column=1, padx=8, pady=2, sticky="w")
@@ -107,32 +115,30 @@ class PreviewCard(ctk.CTkFrame):
             self,
             text=t("btn_add_to_queue"),
             width=140,
+            fg_color=C["accent"],
+            hover_color=C["accent_hover"],
             command=self._on_add,
         )
         self._add_btn.grid(row=3, column=1, padx=8, pady=(4, 16), sticky="w")
 
     def show(self, info: dict):
-        """Populate and show the card with metadata dict."""
         platform = info.get("platform", "Unknown")
         title = info.get("title", "")
         uploader = info.get("uploader", "")
         duration = _format_duration(info.get("duration", 0))
         thumbnail_url = info.get("thumbnail_url", "")
 
-        # Platform badge
-        color = PLATFORM_COLORS.get(platform, "#555555")
-        self._platform_badge.configure(text=f"  {platform}  ", fg_color=color)
+        # Platform badge with soft colors
+        bg, fg = PLATFORM_COLORS.get(platform, (C["accent_soft"], C["accent"]))
+        self._platform_badge.configure(text=f"  {platform}  ", fg_color=bg, text_color=fg)
 
-        # Title
         self._title_label.configure(text=title)
 
-        # Uploader + duration
         meta = uploader
         if duration:
             meta += f"  •  {duration}"
         self._meta_label.configure(text=meta)
 
-        # Show placeholder, then load real thumbnail
         self._thumb_label.configure(image=self._placeholder)
         if thumbnail_url:
             threading.Thread(
@@ -153,6 +159,7 @@ class PreviewCard(ctk.CTkFrame):
             img = Image.open(io.BytesIO(resp.content)).convert("RGB")
             img = img.resize(THUMBNAIL_SIZE, Image.LANCZOS)
             ctk_img = ctk.CTkImage(img, size=THUMBNAIL_SIZE)
+            self._thumb_image = None  # release old reference
             self._thumb_image = ctk_img
             self._thumb_label.after(0, lambda: self._thumb_label.configure(image=ctk_img))
         except Exception:

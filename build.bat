@@ -1,7 +1,18 @@
 @echo off
+chcp 65001 > nul
+
+for /f "delims=" %%v in ('python -c "from core.version_manager import get_current_version; print(get_current_version())"') do set YUKI_VERSION=%%v
+
 echo ============================================
-echo  Building Yuki v1.0.0
+echo  Building Yuki v%YUKI_VERSION%
 echo ============================================
+
+set /p bump_choice=Bump version before build? [y/N]:
+if /i "%bump_choice%"=="y" (
+    call version_bump.bat
+    for /f "delims=" %%v in ('python -c "from core.version_manager import get_current_version; print(get_current_version())"') do set YUKI_VERSION=%%v
+    echo Updated to v%YUKI_VERSION%
+)
 
 echo [1/3] Installing dependencies...
 pip install -r requirements.txt
@@ -16,10 +27,12 @@ pyinstaller ^
   --name Yuki ^
   --icon assets\icon.ico ^
   --windowed ^
-  --onefile ^
+  --onedir ^
+  --version-file version_info.txt ^
   --add-data "assets;assets" ^
   --add-data "locales;locales" ^
   --add-data "ffmpeg;ffmpeg" ^
+  --add-data "version.json;." ^
   --hidden-import customtkinter ^
   --hidden-import PIL._tkinter_finder ^
   --hidden-import mutagen ^
@@ -31,6 +44,7 @@ pyinstaller ^
   --hidden-import spotdl ^
   --hidden-import darkdetect ^
   --hidden-import CTkMessagebox ^
+  --hidden-import git ^
   --collect-all customtkinter ^
   --collect-all yt_dlp ^
   main.py
@@ -42,6 +56,13 @@ if %errorlevel% neq 0 (
 )
 
 echo [3/3] Build complete!
-echo Output: dist\Yuki.exe
+echo Output: dist\Yuki\Yuki.exe
 echo ============================================
+
+set /p commit_choice=Commit build to git? [y/N]:
+if /i "%commit_choice%"=="y" (
+    set /p commit_msg=Commit message:
+    python -c "from core.git_manager import GitManager; from config import BASE_DIR; gm = GitManager(str(BASE_DIR)); ok, err = gm.auto_commit_push('%commit_msg%'); print('Committed & pushed' if ok else f'Git error: {err}')"
+)
+
 pause

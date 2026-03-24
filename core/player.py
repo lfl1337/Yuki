@@ -36,7 +36,7 @@ class AudioPlayer:
 
         if _PYGAME_AVAILABLE:
             try:
-                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
             except Exception as exc:
                 logger.error("pygame.mixer.init failed: %s", exc)
 
@@ -52,6 +52,10 @@ class AudioPlayer:
         if not filepath.exists():
             raise FileNotFoundError(f"File not found: {filepath}")
         self.stop()
+        try:
+            pygame.mixer.music.unload()
+        except Exception:
+            pass
         try:
             pygame.mixer.music.load(str(filepath))
             self._filepath = filepath
@@ -176,18 +180,44 @@ class AudioPlayer:
     # ------------------------------------------------------------------
 
     def _get_duration(self, filepath: Path) -> float:
+        ext = filepath.suffix.lower()
         try:
-            from mutagen.mp3 import MP3 as MuMP3
-            from mutagen.mp4 import MP4 as MuMP4
-            ext = filepath.suffix.lower()
             if ext in (".mp3",):
+                from mutagen.mp3 import MP3 as MuMP3
                 return MuMP3(filepath).info.length
-            elif ext in (".m4a", ".mp4"):
+            elif ext in (".m4a", ".mp4", ".aac"):
+                from mutagen.mp4 import MP4 as MuMP4
                 return MuMP4(filepath).info.length
             else:
-                return MuMP3(filepath).info.length
+                from mutagen import File as MuFile
+                audio = MuFile(filepath)
+                if audio is not None and hasattr(audio, "info") and hasattr(audio.info, "length"):
+                    return audio.info.length
+                if _PYGAME_AVAILABLE:
+                    return pygame.mixer.Sound(str(filepath)).get_length()
+                return 0.0
         except Exception:
+            try:
+                if _PYGAME_AVAILABLE:
+                    return pygame.mixer.Sound(str(filepath)).get_length()
+            except Exception:
+                pass
             return 0.0
+
+    def shutdown(self):
+        """Stop playback and release all pygame resources."""
+        self.stop()
+        if _PYGAME_AVAILABLE:
+            try:
+                pygame.mixer.music.unload()
+                pygame.mixer.quit()
+                pygame.quit()
+            except Exception:
+                pass
+
+    def update_filepath(self, new_path: str):
+        """Update stored filepath after a rename without reloading audio."""
+        self._filepath = Path(new_path)
 
     def _start_monitor(self):
         self._stop_monitor.clear()
@@ -201,7 +231,10 @@ class AudioPlayer:
     def _monitor_loop(self):
         from config import PLAYER_UPDATE_INTERVAL_MS
         interval = PLAYER_UPDATE_INTERVAL_MS / 1000.0
-        while not self._stop_monitor.is_set():
+        # Use wait() instead of sleep() so the loop exits immediately when
+        # _stop_monitor is set (e.g. on stop/shutdown), rather than waiting
+        # up to `interval` seconds for the next sleep cycle to complete.
+        while not self._stop_monitor.wait(interval):
             if self._playing and not self._paused:
                 pos = self.get_position()
                 self._position_cb(pos)
@@ -215,4 +248,3 @@ class AudioPlayer:
                             break
                     except Exception:
                         pass
-            time.sleep(interval)

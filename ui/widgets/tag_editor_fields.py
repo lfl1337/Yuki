@@ -3,7 +3,10 @@ Reusable tag input field widget — label + entry in a row.
 """
 
 import customtkinter as ctk
+from config import UI_COLORS
 from locales.translator import t
+
+C = UI_COLORS
 
 
 class TagField(ctk.CTkFrame):
@@ -12,9 +15,22 @@ class TagField(ctk.CTkFrame):
     def __init__(self, master, label_key: str, width: int = 300, **kwargs):
         super().__init__(master, fg_color="transparent", **kwargs)
         self._label_key = label_key
-        self._label = ctk.CTkLabel(self, text=t(label_key), width=120, anchor="w")
+        self._label = ctk.CTkLabel(
+            self,
+            text=t(label_key),
+            width=120,
+            anchor="w",
+            font=ctk.CTkFont(size=11),
+            text_color=C["text_secondary"],
+        )
         self._label.pack(side="left", padx=(0, 8))
-        self._entry = ctk.CTkEntry(self, width=width)
+        self._entry = ctk.CTkEntry(
+            self,
+            width=width,
+            fg_color=C["bg_elevated"],
+            border_color=C["border"],
+            text_color=C["text_primary"],
+        )
         self._entry.pack(side="left", fill="x", expand=True)
         self._original: str = ""
 

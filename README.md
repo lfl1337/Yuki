@@ -1,159 +1,59 @@
-# Yuki — Universal Media Downloader & MP3 Suite
+# Yuki — Media Suite
 
-```
-  ██    ██ ██    ██ ██   ██ ██
-   ██  ██  ██    ██ ██  ██  ██
-    ████   ██    ██ █████   ██
-     ██    ██    ██ ██  ██  ██
-     ██     ██████  ██   ██ ██
-```
+![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue)
+![Windows](https://img.shields.io/badge/Platform-Windows-blue)
+![Version](https://img.shields.io/badge/version-1.0.0-purple)
 
-**Yuki** is a professional-grade Windows desktop application for downloading media from virtually any platform — and editing MP3 metadata with ease.
+> Download music and videos from YouTube, Spotify, TikTok, Instagram
+> and 1000+ other platforms. Edit MP3 tags, convert between any format,
+> and listen directly in the app.
 
----
+## Download
 
-## ✨ Features
+Go to [Releases](https://github.com/lfl1337/Yuki/releases) and download
+`Yuki_Setup_v1.0.0.exe`. Run the installer. No Python required.
 
-- 🎵 **Download audio** (MP3) at up to 320kbps from YouTube, SoundCloud, TikTok, and more
-- 🎬 **Download video** (MP4) up to 1080p from YouTube, Instagram, Reddit, Vimeo, and more
-- 🎧 **Spotify support** — match and download Spotify tracks, albums, and playlists via YouTube
-- 📝 **MP3 tag editor** — edit title, artist, album, cover art, BPM, genre, and more
-- 🎛️ **Built-in audio player** — seekbar, volume control, history navigation
-- 📋 **Download queue** — up to 3 concurrent downloads with progress bars
-- 🗂️ **Download history** — searchable, exportable to CSV
-- 🌍 **7 languages** — English, German, Turkish, Japanese, French, Spanish, Italian
-- 🌙 **Dark/Light/System theme**
-- 🔄 **Auto-updates yt-dlp** on startup
-- 🚀 **Start with Windows** option
+## Features
 
----
+- Download from YouTube, Spotify, TikTok, Instagram, SoundCloud,
+  Twitter/X and 1000+ other platforms
+- MP3 / MP4 download with quality selection
+- Built-in MP3 tag editor (title, artist, album, cover art and more)
+- Audio and video converter (MP3, WAV, FLAC, OGG, AAC, MP4, MKV and more)
+- Download queue with progress bars
+- Download history with search and filters
+- Built-in audio player
+- Multi-language support (EN, DE, TR, JA, FR, ES, IT)
+- Dark / Light / System theme
+- Auto-updates yt-dlp on startup
 
-## 🌐 Supported Platforms
+## Screenshots
 
-| Platform | Video | Audio | Playlist |
-|---|---|---|---|
-| YouTube | ✅ | ✅ | ✅ |
-| YouTube Shorts | ✅ | ✅ | — |
-| Spotify | — | ✅ | ✅ |
-| Instagram | ✅ | — | — |
-| TikTok | ✅ | ✅ | — |
-| Twitter/X | ✅ | — | — |
-| SoundCloud | — | ✅ | ✅ |
-| Facebook | ✅ | — | — |
-| Vimeo | ✅ | ✅ | — |
-| Dailymotion | ✅ | ✅ | — |
-| Twitch (clips) | ✅ | — | — |
-| Reddit | ✅ | — | — |
-| + Many more via yt-dlp | ✅ | ✅ | — |
+Screenshots coming soon.
 
----
+## Supported Platforms
 
-## 🖥️ Installation (End Users)
+YouTube, Spotify, Instagram, TikTok, SoundCloud, Twitter/X, Facebook,
+Vimeo, Dailymotion, Twitch, Reddit and everything yt-dlp supports.
 
-1. Download `Yuki-Setup-1.0.0.exe` from [Releases](https://github.com/lfl1337/Yuki/releases)
-2. Run the installer — choose install folder, optional desktop shortcut
-3. Launch **Yuki** from the Start Menu or Desktop
-4. Paste a link and hit Download!
+## Developer Setup
 
-> **Note:** Yuki bundles ffmpeg — no additional installs required.
+    git clone https://github.com/lfl1337/Yuki.git
+    cd Yuki
+    pip install -r requirements.txt
+    Place ffmpeg.exe and ffprobe.exe in /ffmpeg/
+    python main.py
 
----
+## Build
 
-## 🛠️ Developer Setup
+    build.bat              - builds Yuki.exe via PyInstaller
+    makensis installer.nsi - builds Yuki_Setup_vX.X.X.exe
+    release.bat            - bumps version, builds, pushes, creates GitHub Release
 
-```bash
-# Clone the repo
-git clone https://github.com/lfl1337/Yuki.git
-cd Yuki
+## Tech Stack
 
-# Create and activate virtual environment
-python -m venv venv
-venv\Scripts\activate
+Python, CustomTkinter, yt-dlp, spotdl, mutagen, pygame, ffmpeg, PyInstaller
 
-# Install dependencies
-pip install -r requirements.txt
+## Author
 
-# Download ffmpeg (place ffmpeg.exe and ffprobe.exe in /ffmpeg folder)
-# https://www.gyan.dev/ffmpeg/builds/ → ffmpeg-release-essentials.zip
-
-# Run the app
-python main.py
-```
-
----
-
-## 🔨 Build
-
-```bash
-# Build standalone .exe
-build.bat
-
-# Output: dist\Yuki.exe
-```
-
-### Creating the Installer (requires NSIS)
-
-```bash
-makensis installer.nsi
-# Output: Yuki-Setup-1.0.0.exe
-```
-
----
-
-## 📦 Tech Stack
-
-| Component | Library |
-|---|---|
-| UI Framework | customtkinter |
-| Download Engine | yt-dlp |
-| Spotify | spotdl |
-| Audio Metadata | mutagen |
-| Image Processing | Pillow |
-| Audio Playback | pygame |
-| HTTP Requests | requests |
-| Build | PyInstaller |
-| Installer | NSIS |
-
----
-
-## 📁 Project Structure
-
-```
-yuki/
-├── main.py              # Entry point
-├── config.py            # Constants & paths
-├── ui/                  # UI components
-│   ├── main_window.py
-│   ├── downloader_tab.py
-│   ├── history_tab.py
-│   ├── editor_tab.py
-│   ├── player_bar.py
-│   ├── queue_panel.py
-│   ├── settings_window.py
-│   └── widgets/
-├── core/                # Business logic
-│   ├── downloader.py
-│   ├── tagger.py
-│   ├── player.py
-│   ├── history.py
-│   ├── detector.py
-│   ├── updater.py
-│   └── autostart.py
-├── locales/             # Translations (7 languages)
-├── assets/              # Icons & images
-└── ffmpeg/              # Bundled ffmpeg binaries
-```
-
----
-
-## 📄 License
-
-MIT License — see [LICENSE](LICENSE)
-
----
-
-## 🔗 Links
-
-- **GitHub:** [github.com/lfl1337/Yuki](https://github.com/lfl1337/Yuki)
-- **Issues:** [github.com/lfl1337/Yuki/issues](https://github.com/lfl1337/Yuki/issues)
-- **yt-dlp:** [github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp)
+ninym

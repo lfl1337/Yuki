@@ -13,3 +13,4 @@ venv/
 .venv/
 *.egg-info/
 .pytest_cache/
+Yuki_Setup_*.exe
