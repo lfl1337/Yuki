@@ -44,7 +44,7 @@ def get_job(job_id: str) -> Optional[ConversionJob]:
 
 
 def get_active_jobs() -> list[ConversionJob]:
-    return [j for j in _jobs.values() if j.status not in ("done", "failed", "cancelled")]
+    return [j for j in _jobs.values() if j.status not in ("done", "error", "cancelled")]
 
 
 def get_all_jobs() -> list[ConversionJob]:
@@ -185,6 +185,7 @@ async def _run_conversion(job: ConversionJob, output_format: str, quality: dict)
             cmd = _build_ffmpeg_cmd(
                 job.input_path, job.output_path, output_format, quality
             )
+            logger.info("ffmpeg command: %s", " ".join(cmd))
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.DEVNULL,
@@ -208,13 +209,14 @@ async def _run_conversion(job: ConversionJob, output_format: str, quality: dict)
                     job.progress_pct = min(elapsed / job.duration_s * 100, 99.0)
 
             await proc.wait()
+            logger.info("ffmpeg returncode: %s for %s", proc.returncode, job.input_path)
             if proc.returncode == 0:
                 job.status = "done"
                 job.progress_pct = 100
             else:
-                job.status = "failed"
+                job.status = "error"
                 job.error = f"ffmpeg exited with code {proc.returncode}"
         except Exception as exc:
-            job.status = "failed"
+            job.status = "error"
             job.error = str(exc)
             logger.error("Conversion failed for %s: %s", job.input_path, exc)
