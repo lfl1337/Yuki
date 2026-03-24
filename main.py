@@ -3,9 +3,32 @@ Yuki — Universal Media Downloader & MP3 Suite
 Entry point: loads settings, generates assets, launches the main window.
 """
 
+import sys
+import os
+import tempfile
+import msvcrt
+
+
+def ensure_single_instance():
+    lock_file = os.path.join(tempfile.gettempdir(), "yuki.lock")
+    try:
+        fp = open(lock_file, "w")
+        msvcrt.locking(fp.fileno(), msvcrt.LK_NBLCK, 1)
+        return fp  # keep reference alive — lock released when process exits
+    except (IOError, OSError):
+        import tkinter as tk
+        from tkinter import messagebox
+        root = tk.Tk()
+        root.withdraw()
+        messagebox.showinfo("Yuki", "Yuki is already running.")
+        root.destroy()
+        sys.exit(0)
+
+
+_lock = ensure_single_instance()  # module-level so it stays alive for the process lifetime
+
 import json
 import logging
-import sys
 from pathlib import Path
 
 # Bootstrap: ensure project root is on sys.path when running as a script
@@ -132,8 +155,13 @@ def main():
         sys.exit(1)
 
     from ui.main_window import MainWindow
+    from core.auto_updater import AutoUpdater
 
     app = MainWindow(settings=settings)
+
+    updater = AutoUpdater()
+    updater.check_in_background()
+
     app.mainloop()
 
     logger.info("Yuki exited cleanly")

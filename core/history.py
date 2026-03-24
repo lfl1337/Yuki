@@ -32,6 +32,11 @@ class HistoryManager:
         entry = dict(entry)
         entry.setdefault("id", str(uuid.uuid4()))
         entry.setdefault("downloaded_at", datetime.now().isoformat())
+        if entry.get("filepath"):
+            try:
+                entry["filepath"] = str(Path(entry["filepath"]).resolve())
+            except Exception:
+                pass
         with self._lock:
             self._entries.insert(0, entry)
             if len(self._entries) > MAX_HISTORY_ENTRIES:

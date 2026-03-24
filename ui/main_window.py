@@ -134,7 +134,7 @@ class MainWindow(ctk.CTk):
             self._content,
             history_manager=self._history,
             on_play=self._play_from_history,
-            on_edit=self._edit_from_history,
+            on_edit_tags=self._on_edit_tags,
         )
         self._editor_tab = EditorTab(
             self._content,
@@ -240,6 +240,13 @@ class MainWindow(ctk.CTk):
         if filepath and Path(filepath).exists():
             self._navigate("editor")
             self._editor_tab.load_file(filepath)
+
+    def _on_edit_tags(self, filepath: str):
+        if not filepath or not Path(filepath).exists():
+            self._show_toast("File not found on disk", "error")
+            return
+        self._navigate("editor")
+        self.after(50, lambda: self._editor_tab.load_file(filepath))
 
     def _on_file_renamed(self, old_path: str, new_path: str):
         player = self._player_bar.get_player()
