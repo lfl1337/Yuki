@@ -69,6 +69,7 @@ def main():
             port=port,
             log_level="warning",   # uvicorn's own logs muted; we use our logger
             access_log=False,
+            timeout_keep_alive=30,
         )
     finally:
         try:
