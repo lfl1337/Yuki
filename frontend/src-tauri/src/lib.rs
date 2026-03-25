@@ -66,8 +66,10 @@ pub fn run() {
                 let data_dir_str = data_dir.to_string_lossy().to_string();
 
                 // Kill any leftover backend from a previous crashed session.
+                // In the installed app the sidecar is bundled as "yuki-backend.exe"
+                // (Tauri strips the target triple when creating the NSIS package).
                 let _ = std::process::Command::new("taskkill")
-                    .args(["/f", "/im", "yuki-backend-x86_64-pc-windows-msvc.exe"])
+                    .args(["/f", "/im", "yuki-backend.exe"])
                     .output();
 
                 // Delete stale .runtime_port so the poll below waits for the
@@ -206,7 +208,7 @@ pub fn run() {
                 {
                     use std::os::windows::process::CommandExt;
                     let _ = std::process::Command::new("taskkill")
-                        .args(["/f", "/im", "yuki-backend-x86_64-pc-windows-msvc.exe"])
+                        .args(["/f", "/im", "yuki-backend.exe"])
                         .creation_flags(0x08000000)
                         .stdout(std::process::Stdio::null())
                         .stderr(std::process::Stdio::null())

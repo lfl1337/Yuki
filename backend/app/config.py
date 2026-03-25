@@ -62,3 +62,6 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Player monitor interval in milliseconds
+PLAYER_UPDATE_INTERVAL_MS: int = 500

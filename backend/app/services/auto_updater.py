@@ -104,7 +104,7 @@ def _launch_installer(installer: Path) -> None:
             "@echo off\r\n"
             "timeout /t 2 /nobreak >nul\r\n"
             "taskkill /f /im Yuki.exe >nul 2>&1\r\n"
-            "taskkill /f /im yuki-backend-x86_64-pc-windows-msvc.exe >nul 2>&1\r\n"
+            "taskkill /f /im yuki-backend.exe >nul 2>&1\r\n"
             f'start "" "{installer}" /S\r\n'
             "exit\r\n",
             encoding="utf-8",
