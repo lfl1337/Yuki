@@ -61,6 +61,11 @@ export default function Editor() {
   const [coverUrl, setCoverUrl] = useState('')
   const [statusMsg, setStatusMsg] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const mountedRef = useRef(true)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
 
   // ── Batch state ───────────────────────────────────────────────────────
   const [batchFiles, setBatchFiles] = useState<BatchFile[]>([])
@@ -73,7 +78,7 @@ export default function Editor() {
   const batchCoverFileRef = useRef<HTMLInputElement>(null)
 
   // ── Single-file logic ─────────────────────────────────────────────────
-  const loadFile = useCallback(async (path: string) => {
+  const loadFile = useCallback(async (path: string, mounted: { current: boolean }) => {
     setLoading(true)
     setStatusMsg('')
     try {
@@ -87,21 +92,23 @@ export default function Editor() {
         composer: res.composer || '', comment: res.comment || '',
         cover_art_b64: res.cover_art_b64 || '',
       }
-      setTags(t_)
-      setOriginal(t_)
-      setFilepath(path)
-      const parts = path.replace(/\\/g, '/').split('/')
-      const fname = parts[parts.length - 1]
-      setFilename(fname.replace(/\.[^.]+$/, ''))
-      setFileInfo({
-        size: res.filesize ? `${(res.filesize / 1024 / 1024).toFixed(1)} MB` : '',
-        format: res.format || '',
-        duration: res.duration
-          ? `${Math.floor(res.duration / 60)}:${(res.duration % 60).toString().padStart(2, '0')}`
-          : '',
-      })
+      if (mounted.current) {
+        setTags(t_)
+        setOriginal(t_)
+        setFilepath(path)
+        const parts = path.replace(/\\/g, '/').split('/')
+        const fname = parts[parts.length - 1]
+        setFilename(fname.replace(/\.[^.]+$/, ''))
+        setFileInfo({
+          size: res.filesize ? `${(res.filesize / 1024 / 1024).toFixed(1)} MB` : '',
+          format: res.format || '',
+          duration: res.duration
+            ? `${Math.floor(res.duration / 60)}:${(res.duration % 60).toString().padStart(2, '0')}`
+            : '',
+        })
+      }
     } catch {}
-    setLoading(false)
+    if (mounted.current) setLoading(false)
   }, [])
 
   const handleOpenFile = async () => {
@@ -109,12 +116,14 @@ export default function Editor() {
       multiple: false,
       filters: [{ name: 'Audio', extensions: ['mp3', 'flac', 'wav', 'm4a', 'ogg', 'aac', 'opus'] }],
     })
-    if (selected && typeof selected === 'string') loadFile(selected)
+    if (selected && typeof selected === 'string') loadFile(selected, { current: true })
   }
 
   useEffect(() => {
-    if (location.state?.filepath) loadFile(location.state.filepath)
-    else if (playerState.filepath) loadFile(playerState.filepath)
+    const mounted = { current: true }
+    if (location.state?.filepath) loadFile(location.state.filepath, mounted)
+    else if (playerState.filepath) loadFile(playerState.filepath, mounted)
+    return () => { mounted.current = false }
   }, [location.state, loadFile])
 
   const set = (key: keyof Tags, value: string) =>
@@ -152,6 +161,7 @@ export default function Editor() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
+      if (!mountedRef.current) return
       if (typeof reader.result === 'string')
         setTags((t_) => ({ ...t_, cover_art_b64: reader.result as string }))
     }
@@ -221,6 +231,7 @@ export default function Editor() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
+      if (!mountedRef.current) return
       if (typeof reader.result === 'string') setBatchCoverB64(reader.result)
     }
     reader.readAsDataURL(file)

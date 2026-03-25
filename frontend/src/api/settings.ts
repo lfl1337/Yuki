@@ -4,7 +4,8 @@ import { apiFetch } from './client'
 export async function loadSettings(): Promise<Record<string, unknown>> {
   try {
     return await apiFetch<Record<string, unknown>>('/settings')
-  } catch {
+  } catch (error) {
+    console.error('[settings] loadSettings failed:', error)
     return {}
   }
 }
@@ -16,7 +17,8 @@ export async function patchSettings(partial: Record<string, unknown>): Promise<v
       method: 'PATCH',
       body: JSON.stringify(partial),
     })
-  } catch {
+  } catch (error) {
+    console.error('[settings] patchSettings failed:', error)
     // Best-effort — don't throw on save failure
   }
 }

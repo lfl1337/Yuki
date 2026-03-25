@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import PlayerBar from "./components/PlayerBar";
 import Settings from "./components/Settings";
 import Downloader from "./views/Downloader";
 import History from "./views/History";
-import Editor from "./views/Editor";
-import Converter from "./views/Converter";
+const Editor = lazy(() => import("./views/Editor"));
+const Converter = lazy(() => import("./views/Converter"));
 import { useStore } from "./store";
 import { checkBackendOnline, apiFetch, setPort } from "./api/client";
 import { applyTheme } from "./utils/theme";
@@ -47,13 +47,16 @@ function AppShell() {
 
   // Apply saved theme on startup
   useEffect(() => {
+    let mounted = true
     apiFetch<Record<string, string>>('/settings')
       .then((data) => {
+        if (!mounted) return
         const raw = data['theme']
         const theme = raw ? (JSON.parse(raw) as string) : 'dark'
         applyTheme(theme)
       })
-      .catch(() => applyTheme('dark'))
+      .catch(() => { if (mounted) applyTheme('dark') })
+    return () => { mounted = false }
   }, [])
 
   // Poll backend health
@@ -80,12 +83,18 @@ function AppShell() {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
         <main className="flex-1 overflow-auto min-w-0">
-          <Routes>
-            <Route path="/" element={<Downloader />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/editor" element={<Editor />} />
-            <Route path="/converter" element={<Converter />} />
-          </Routes>
+          <Suspense fallback={
+            <div className="flex items-center justify-center h-full text-text2 text-sm">
+              Loading…
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Downloader />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/editor" element={<Editor />} />
+              <Route path="/converter" element={<Converter />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
       <PlayerBar />

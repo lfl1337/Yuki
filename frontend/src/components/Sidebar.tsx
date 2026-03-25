@@ -22,16 +22,12 @@ export default function Sidebar() {
       try {
         const base = getBase()
         const url = `${base}/health`
-        console.log("[Yuki] getBase():", base)
-        console.log("[Yuki] health check URL:", url)
         const res = await fetch(url, {
           credentials: 'omit',
           signal: AbortSignal.timeout(3000),
         })
-        console.log("[Yuki] health response:", res.status)
         setOnline(res.ok)
-      } catch (err) {
-        console.log("[Yuki] health check error:", err)
+      } catch {
         setOnline(false)
       }
     }

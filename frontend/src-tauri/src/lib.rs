@@ -31,6 +31,16 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(
+            tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+                // Second instance tried to start — focus the existing window
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                    let _ = window.unminimize();
+                }
+            })
+        )
         .manage(BackendProcess(Mutex::new(None)))
         .manage(DiscoveredPort(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![get_backend_port])

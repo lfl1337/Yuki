@@ -22,10 +22,13 @@ export async function apiFetch<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // Use caller's signal if provided (e.g., for abort), otherwise enforce 10-second timeout
+  const signal = (options as any)?.signal ?? AbortSignal.timeout(10_000);
   const res = await fetch(`${backendBase}/api/v1${path}`, {
     credentials: "omit",
     headers: { "Content-Type": "application/json", ...options.headers },
     ...options,
+    signal,
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");

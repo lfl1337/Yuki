@@ -71,9 +71,11 @@ export default function Settings({ open, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!open) return
+    let mounted = true
     loadSettings().then((data) => {
-      setSettings({ ...defaultSettings, ...(data as Partial<AppSettings>) })
+      if (mounted) setSettings({ ...defaultSettings, ...(data as Partial<AppSettings>) })
     })
+    return () => { mounted = false }
   }, [open])
 
   const set = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {

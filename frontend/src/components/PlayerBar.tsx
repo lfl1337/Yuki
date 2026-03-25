@@ -87,9 +87,11 @@ export default function PlayerBar() {
     if (!repeat) return
     if (!playerState.isPlaying && !playerState.isPaused) {
       if (playerState.duration > 0 && playerState.position > 0) {
+        let id: ReturnType<typeof setTimeout>
         playerApi.seek(0).then(() => {
-          setTimeout(() => playerApi.play(), 100)
+          id = setTimeout(() => playerApi.play(), 100)
         })
+        return () => clearTimeout(id)
       }
     }
   }, [playerState.isPlaying, playerState.isPaused, repeat])
