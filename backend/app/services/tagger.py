@@ -10,7 +10,6 @@ import stat
 from pathlib import Path
 from typing import Optional, Union
 
-import requests
 from mutagen.id3 import (
     ID3,
     ID3NoHeaderError,
@@ -408,6 +407,7 @@ class MP3Tagger:
         """Returns (bytes, mime_type) or (None, None)."""
         try:
             if isinstance(source, str) and source.lower().startswith("https://"):
+                import requests  # lazy import — only loaded when cover URL is fetched
                 resp = requests.get(source, timeout=10)
                 resp.raise_for_status()
                 data = resp.content
