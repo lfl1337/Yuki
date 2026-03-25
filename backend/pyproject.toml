@@ -1,6 +1,6 @@
 [project]
 name = "yuki-backend"
-version = "2.1.3"
+version = "2.2.0"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.111.0",
