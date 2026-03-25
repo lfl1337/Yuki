@@ -16,9 +16,10 @@ ROOT = Path(__file__).parent.parent
 
 FILES_TO_PATCH = [
     # (relative_path, regex_pattern, replacement_template)
-    ("VERSION", r".*", "{version}"),
+    ("VERSION", r"^\d+\.\d+\.\d+$", "{version}"),
     ("frontend/src-tauri/tauri.conf.json", r'"version": "\d+\.\d+\.\d+"', '"version": "{version}"'),
     ("frontend/src-tauri/Cargo.toml", r'^version = "\d+\.\d+\.\d+"', 'version = "{version}"'),
+    ("backend/pyproject.toml", r'^version = "\d+\.\d+\.\d+"', 'version = "{version}"'),
     ("frontend/package.json", r'"version": "\d+\.\d+\.\d+"', '"version": "{version}"'),
     ("backend/app/main.py", r'version="\d+\.\d+\.\d+"', 'version="{version}"'),
     ("backend/app/services/auto_updater.py", r'^VERSION = "\d+\.\d+\.\d+"', 'VERSION = "{version}"'),

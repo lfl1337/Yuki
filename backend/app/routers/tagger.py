@@ -20,6 +20,23 @@ router = APIRouter(prefix="/tagger", tags=["tagger"])
 _tagger = MP3Tagger()
 
 
+async def _validate_audio_filepath(filepath: str) -> Path:
+    """Resolve and validate a user-supplied file path."""
+    p = Path(filepath).resolve()
+    exists = await asyncio.to_thread(p.exists)
+    if not exists:
+        raise HTTPException(status_code=404, detail="File not found")
+    is_file = await asyncio.to_thread(p.is_file)
+    if not is_file:
+        raise HTTPException(status_code=400, detail="Path is not a file")
+    # Reject access to system directories
+    p_str = str(p).lower()
+    for forbidden in ("c:\\windows", "c:\\program files"):
+        if p_str.startswith(forbidden):
+            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
+    return p
+
+
 def _encode_cover(filepath: str) -> str | None:
     try:
         img = _tagger.get_cover_art(filepath)
@@ -34,13 +51,13 @@ def _encode_cover(filepath: str) -> str | None:
 
 @router.post("/read", response_model=TagsRead)
 async def read_tags(body: TaggerReadRequest):
-    if not Path(body.filepath).exists():
-        raise HTTPException(404, f"File not found: {body.filepath}")
+    await _validate_audio_filepath(body.filepath)
     try:
         tags = await asyncio.to_thread(_tagger.read_tags, body.filepath)
         cover = await asyncio.to_thread(_encode_cover, body.filepath)
         p = Path(body.filepath)
-        size = p.stat().st_size
+        stat = await asyncio.to_thread(p.stat)
+        size = stat.st_size
         duration = 0
         try:
             import mutagen
@@ -74,8 +91,7 @@ async def read_tags(body: TaggerReadRequest):
 
 @router.post("/write")
 async def write_tags(body: TagsWriteRequest):
-    if not Path(body.filepath).exists():
-        raise HTTPException(404, f"File not found: {body.filepath}")
+    await _validate_audio_filepath(body.filepath)
     tags = {k: v for k, v in body.model_dump(exclude={"filepath", "cover_art_b64"}).items() if v is not None and str(v).strip() != ''}
     try:
         if tags:
@@ -134,6 +150,7 @@ async def cover_from_url(body: CoverFromUrlRequest):
 
 @router.post("/rename")
 async def rename(body: RenameRequest):
+    await _validate_audio_filepath(body.filepath)
     ok, result = await asyncio.to_thread(_tagger.rename_file, body.filepath, body.new_name)
     if ok:
         return {"ok": True, "new_filepath": result}
@@ -142,8 +159,7 @@ async def rename(body: RenameRequest):
 
 @router.get("/auto-name")
 async def auto_name(filepath: str):
-    if not Path(filepath).exists():
-        raise HTTPException(404, "File not found")
+    await _validate_audio_filepath(filepath)
     try:
         tags = await asyncio.to_thread(_tagger.read_tags, filepath)
         artist = tags.get("artist", "")

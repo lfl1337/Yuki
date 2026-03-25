@@ -233,7 +233,7 @@ class AudioPlayer:
         self._monitor_thread.start()
 
     def _monitor_loop(self):
-        from config import PLAYER_UPDATE_INTERVAL_MS
+        from ..config import PLAYER_UPDATE_INTERVAL_MS
         interval = PLAYER_UPDATE_INTERVAL_MS / 1000.0
         # Use wait() instead of sleep() so the loop exits immediately when
         # _stop_monitor is set (e.g. on stop/shutdown), rather than waiting

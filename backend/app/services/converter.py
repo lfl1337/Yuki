@@ -108,7 +108,11 @@ def _resolve_output_path(
             format=output_format.lower(),
             date=datetime.date.today().strftime("%Y%m%d"),
         )
-    return str(base_dir / (name + ext))
+    output_path = (base_dir / (name + ext)).resolve()
+    allowed_dir = base_dir.resolve()
+    if not str(output_path).startswith(str(allowed_dir)):
+        raise ValueError(f"Illegal filename pattern: path escapes output directory")
+    return str(output_path)
 
 
 def _build_ffmpeg_cmd(

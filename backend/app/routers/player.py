@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
@@ -18,11 +19,26 @@ def _get() -> AudioPlayer:
     return player_svc.get_player()
 
 
+async def _validate_audio_filepath(filepath: str) -> Path:
+    """Resolve and validate a user-supplied file path."""
+    p = Path(filepath).resolve()
+    exists = await asyncio.to_thread(p.exists)
+    if not exists:
+        raise HTTPException(status_code=404, detail="File not found")
+    is_file = await asyncio.to_thread(p.is_file)
+    if not is_file:
+        raise HTTPException(status_code=400, detail="Path is not a file")
+    # Reject access to system directories
+    p_str = str(p).lower()
+    for forbidden in ("c:\\windows", "c:\\program files"):
+        if p_str.startswith(forbidden):
+            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
+    return p
+
+
 @router.post("/load")
 async def load(body: PlayerLoadRequest):
-    from pathlib import Path
-    if not Path(body.filepath).exists():
-        raise HTTPException(404, f"File not found: {body.filepath}")
+    await _validate_audio_filepath(body.filepath)
     try:
         await asyncio.to_thread(_get().load, body.filepath)
         # Warm the tag cache immediately so SSE never reads from disk

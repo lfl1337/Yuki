@@ -2,6 +2,7 @@
 
 import json
 import logging
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Request
 from sse_starlette.sse import EventSourceResponse
@@ -41,6 +42,9 @@ def _job_to_read(job) -> DownloadJobRead:
 async def start_download(body: DownloadStartRequest):
     if not body.url.strip():
         raise HTTPException(400, "URL is required")
+    parsed = urlparse(body.url.strip())
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="URL must use http or https scheme")
     output_dir = body.output_dir or settings.data_dir + "/Downloads"
     job_id = dl.start_download(
         url=body.url.strip(),
@@ -62,6 +66,9 @@ async def batch_download(body: BatchDownloadRequest):
         url = url.strip()
         if not url:
             continue
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="URL must use http or https scheme")
         detected = detect_platform(url)
         if not detected["valid"]:
             continue

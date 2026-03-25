@@ -9,6 +9,7 @@ import asyncio
 import base64
 import io
 import logging
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -28,6 +29,7 @@ _tag_cache: dict = {
     "artist": "",
     "cover_b64": None,
 }
+_cache_lock = threading.Lock()
 
 
 def get_player() -> AudioPlayer:
@@ -62,12 +64,13 @@ def _refresh_tag_cache(filepath_str: str) -> None:
     except Exception:
         pass
 
-    _tag_cache = {
-        "filepath": filepath_str,
-        "title": title,
-        "artist": artist,
-        "cover_b64": cover_b64,
-    }
+    with _cache_lock:
+        _tag_cache = {
+            "filepath": filepath_str,
+            "title": title,
+            "artist": artist,
+            "cover_b64": cover_b64,
+        }
     logger.debug("Tag cache refreshed for: %s", fp.name)
 
 
@@ -85,12 +88,15 @@ def get_status_dict() -> dict:
     filepath_str = str(fp) if fp else ""
 
     # If filepath changed (e.g. external load), refresh cache once
-    if filepath_str and filepath_str != _tag_cache["filepath"]:
+    with _cache_lock:
+        cached_filepath = _tag_cache["filepath"]
+    if filepath_str and filepath_str != cached_filepath:
         _refresh_tag_cache(filepath_str)
 
-    title = _tag_cache["title"] if filepath_str else ""
-    artist = _tag_cache["artist"] if filepath_str else ""
-    cover_b64 = _tag_cache["cover_b64"] if filepath_str else None
+    with _cache_lock:
+        title = _tag_cache["title"] if filepath_str else ""
+        artist = _tag_cache["artist"] if filepath_str else ""
+        cover_b64 = _tag_cache["cover_b64"] if filepath_str else None
 
     return {
         "is_playing": p.is_playing(),

@@ -21,6 +21,10 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 
+Image.MAX_IMAGE_PIXELS = 50_000_000  # 50 megapixels — Pillow's built-in decompression bomb guard
+
+MAX_IMAGE_BYTES = 20 * 1024 * 1024  # 20 MB
+
 logger = logging.getLogger(__name__)
 
 
@@ -414,6 +418,8 @@ class MP3Tagger:
                 data = path.read_bytes()
                 ext = path.suffix.lower()
                 mime = "image/png" if ext == ".png" else "image/jpeg"
+            if len(data) > MAX_IMAGE_BYTES:
+                raise ValueError(f"Image too large: {len(data) // (1024*1024)} MB (max 20 MB)")
             # Normalize to JPEG for compatibility
             img = Image.open(io.BytesIO(data)).convert("RGB")
             buf = io.BytesIO()
