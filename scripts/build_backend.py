@@ -91,6 +91,22 @@ COLLECT_ALL = [
     "yt_dlp",
 ]
 
+EXCLUDE_MODULES = [
+    # GUI toolkits — never needed in a headless server
+    "tkinter", "_tkinter", "tcl", "tk",
+    # Testing frameworks
+    "unittest", "test", "tests", "doctest",
+    # Package management — not needed at runtime
+    "distutils", "setuptools", "pip", "ensurepip",
+    # Legacy/unused stdlib
+    "lib2to3", "idlelib", "pydoc_data", "turtledemo", "turtle",
+    "antigravity", "this",
+    # Server-side HTTP — Yuki is a client
+    "xmlrpc", "ftplib", "cgi", "cgitb",
+    # Curses — Windows terminal library (not used)
+    "curses", "_curses",
+]
+
 
 def main() -> None:
     print("Building Yuki backend…")
@@ -116,6 +132,7 @@ def main() -> None:
         "--specpath", str(ROOT / "build" / "pyinstaller"),
         "--noconfirm",
         "--log-level", "WARN",
+        "--clean",
     ]
 
     # Hidden imports
@@ -125,6 +142,10 @@ def main() -> None:
     # Collect all
     for pkg in COLLECT_ALL:
         cmd += ["--collect-all", pkg]
+
+    # Exclude unused modules to reduce bundle size
+    for mod in EXCLUDE_MODULES:
+        cmd += ["--exclude-module", mod]
 
     # Add data: ffmpeg binaries (relative to BACKEND dir)
     ffmpeg_dir = ROOT / "ffmpeg"
