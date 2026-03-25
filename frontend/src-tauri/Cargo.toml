@@ -1,6 +1,6 @@
 [package]
 name = "yuki"
-version = "2.2.0"
+version = "3.0.0"
 description = "Yuki — Media Suite"
 authors = ["ninym"]
 edition = "2021"
