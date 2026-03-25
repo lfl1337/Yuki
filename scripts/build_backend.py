@@ -96,8 +96,6 @@ EXCLUDE_MODULES = [
     "tkinter", "_tkinter", "tcl", "tk",
     # Testing frameworks
     "unittest", "test", "tests", "doctest",
-    # Package management — not needed at runtime
-    "distutils", "setuptools", "pip", "ensurepip",
     # Legacy/unused stdlib
     "lib2to3", "idlelib", "pydoc_data", "turtledemo", "turtle",
     "antigravity", "this",
