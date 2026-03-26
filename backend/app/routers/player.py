@@ -19,20 +19,37 @@ def _get() -> AudioPlayer:
     return player_svc.get_player()
 
 
+_ALLOWED_AUDIO_EXTENSIONS = {
+    ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
+    ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+}
+
+_FORBIDDEN_PATH_PREFIXES = (
+    "c:\\windows",
+    "c:\\program files",
+    "c:\\program files (x86)",
+    "c:\\programdata",
+    "c:\\system volume information",
+)
+
+
 async def _validate_audio_filepath(filepath: str) -> Path:
     """Resolve and validate a user-supplied file path."""
     p = Path(filepath).resolve()
+    # Validate extension whitelist before any filesystem operations
+    if p.suffix.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    # Reject access to system directories before touching the filesystem
+    p_str = str(p).lower()
+    for forbidden in _FORBIDDEN_PATH_PREFIXES:
+        if p_str.startswith(forbidden):
+            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
     exists = await asyncio.to_thread(p.exists)
     if not exists:
         raise HTTPException(status_code=404, detail="File not found")
     is_file = await asyncio.to_thread(p.is_file)
     if not is_file:
         raise HTTPException(status_code=400, detail="Path is not a file")
-    # Reject access to system directories
-    p_str = str(p).lower()
-    for forbidden in ("c:\\windows", "c:\\program files"):
-        if p_str.startswith(forbidden):
-            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
     return p
 
 

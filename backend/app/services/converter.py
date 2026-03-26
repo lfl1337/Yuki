@@ -14,6 +14,24 @@ from typing import Optional
 
 from ..config import settings
 
+_ALLOWED_INPUT_EXTENSIONS = {
+    ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
+    ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+}
+
+_ALLOWED_OUTPUT_FORMATS = {
+    "mp3", "flac", "wav", "ogg", "aac", "opus", "m4a", "wma",
+    "mp4", "mkv", "avi", "mov", "webm", "gif",
+}
+
+_FORBIDDEN_PATH_PREFIXES = (
+    "c:\\windows",
+    "c:\\program files",
+    "c:\\program files (x86)",
+    "c:\\programdata",
+    "c:\\system volume information",
+)
+
 logger = logging.getLogger("yuki.converter")
 
 _semaphore: Optional[asyncio.Semaphore] = None
@@ -70,10 +88,21 @@ async def start_conversion(
     filename_pattern: str = "{name}_{format}",
     create_subfolder: bool = False,
 ) -> list[str]:
+    # Validate output format against allowlist
+    if output_format.lower() not in _ALLOWED_OUTPUT_FORMATS:
+        raise ValueError(f"Unsupported output format: {output_format}")
     job_ids = []
     for input_path in files:
-        # Ensure absolute path so subprocess can always find the file
-        input_path = str(Path(input_path).resolve())
+        p = Path(input_path).resolve()
+        # Validate input extension against allowlist before filesystem use
+        if p.suffix.lower() not in _ALLOWED_INPUT_EXTENSIONS:
+            raise ValueError(f"Input file type not allowed: {p.suffix}")
+        # Reject system directories
+        p_str = str(p).lower()
+        for forbidden in _FORBIDDEN_PATH_PREFIXES:
+            if p_str.startswith(forbidden):
+                raise ValueError("Access to system directories is not allowed")
+        input_path = str(p)
         job_id = str(uuid.uuid4())
         out_path = _resolve_output_path(
             input_path, output_format, output_dir,

@@ -3,8 +3,11 @@
 import asyncio
 import base64
 import io
+import ipaddress
 import logging
+import socket
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException
 
@@ -19,22 +22,60 @@ logger = logging.getLogger("yuki.routers.tagger")
 router = APIRouter(prefix="/tagger", tags=["tagger"])
 _tagger = MP3Tagger()
 
+_ALLOWED_AUDIO_EXTENSIONS = {
+    ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
+    ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
+}
+
+_FORBIDDEN_PATH_PREFIXES = (
+    "c:\\windows",
+    "c:\\program files",
+    "c:\\program files (x86)",
+    "c:\\programdata",
+    "c:\\system volume information",
+)
+
 
 async def _validate_audio_filepath(filepath: str) -> Path:
     """Resolve and validate a user-supplied file path."""
     p = Path(filepath).resolve()
+    # Validate extension whitelist before any filesystem operations
+    if p.suffix.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="File type not allowed")
+    # Reject access to system directories before touching the filesystem
+    p_str = str(p).lower()
+    for forbidden in _FORBIDDEN_PATH_PREFIXES:
+        if p_str.startswith(forbidden):
+            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
     exists = await asyncio.to_thread(p.exists)
     if not exists:
         raise HTTPException(status_code=404, detail="File not found")
     is_file = await asyncio.to_thread(p.is_file)
     if not is_file:
         raise HTTPException(status_code=400, detail="Path is not a file")
-    # Reject access to system directories
-    p_str = str(p).lower()
-    for forbidden in ("c:\\windows", "c:\\program files"):
-        if p_str.startswith(forbidden):
-            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
     return p
+
+
+def _is_safe_cover_url(url: str) -> bool:
+    """Block SSRF: only allow HTTPS URLs that resolve to public IP addresses."""
+    try:
+        parsed = urlparse(url)
+        if parsed.scheme != "https":
+            return False
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        if hostname.lower() in ("localhost", "metadata.google.internal"):
+            return False
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(hostname))
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                return False
+        except (socket.gaierror, ValueError):
+            return False
+        return True
+    except Exception:
+        return False
 
 
 def _encode_cover(filepath: str) -> str | None:
@@ -132,8 +173,8 @@ async def batch_save(body: BatchSaveRequest):
 @router.post("/cover-from-url")
 async def cover_from_url(body: CoverFromUrlRequest):
     url = body.url.strip()
-    if not url.startswith("https://"):
-        raise HTTPException(400, "Cover URL must use HTTPS")
+    if not _is_safe_cover_url(url):
+        raise HTTPException(400, "Cover URL must use HTTPS and point to a public host")
     try:
         import requests as req
         resp = req.get(url, timeout=10)
@@ -144,8 +185,11 @@ async def cover_from_url(body: CoverFromUrlRequest):
         img.save(buf, format="JPEG", quality=85)
         b64 = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
         return {"cover_art_b64": b64}
-    except Exception as exc:
-        raise HTTPException(400, f"Failed to fetch cover: {exc}")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning("Failed to fetch cover from URL", exc_info=True)
+        raise HTTPException(400, "Failed to fetch cover image")
 
 
 @router.post("/rename")

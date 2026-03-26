@@ -1,7 +1,6 @@
 """System utility endpoints — open folder in Explorer, etc."""
 
 import logging
-import os
 import subprocess
 from pathlib import Path
 
@@ -10,6 +9,14 @@ from pydantic import BaseModel
 
 logger = logging.getLogger("yuki.routers.system")
 router = APIRouter(prefix="/system", tags=["system"])
+
+_FORBIDDEN_PATH_PREFIXES = (
+    "c:\\windows",
+    "c:\\program files",
+    "c:\\program files (x86)",
+    "c:\\programdata",
+    "c:\\system volume information",
+)
 
 
 class OpenFolderRequest(BaseModel):
@@ -24,12 +31,19 @@ async def open_folder(body: OpenFolderRequest):
     if not raw:
         return {"ok": False, "error": "empty path"}
 
-    folder = Path(raw)
+    folder = Path(raw).resolve()
+
+    # Reject access to system directories before any filesystem operations
+    folder_str = str(folder).lower()
+    for forbidden in _FORBIDDEN_PATH_PREFIXES:
+        if folder_str.startswith(forbidden):
+            return {"ok": False, "error": "Access to system directories is not allowed"}
+
     if folder.is_file():
         folder = folder.parent
 
     if not folder.exists():
-        return {"ok": False, "error": f"path does not exist: {folder}"}
+        return {"ok": False, "error": "Path does not exist"}
 
     try:
         subprocess.Popen(
@@ -40,4 +54,4 @@ async def open_folder(body: OpenFolderRequest):
         return {"ok": True}
     except Exception as exc:
         logger.warning("open-folder failed: %s", exc)
-        return {"ok": False, "error": str(exc)}
+        return {"ok": False, "error": "Failed to open folder"}
