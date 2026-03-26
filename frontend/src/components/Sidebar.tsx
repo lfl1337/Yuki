@@ -80,7 +80,7 @@ export default function Sidebar() {
               online ? 'bg-green-500' : 'bg-red-500'
             }`}
           />
-          <span className="text-xs text-text3">v3.0.0</span>
+          <span className="text-xs text-text3">v3.1.0</span>
         </div>
       </div>
     </aside>

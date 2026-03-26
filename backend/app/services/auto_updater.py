@@ -16,7 +16,7 @@ from packaging.version import Version
 
 logger = logging.getLogger("yuki.auto_updater")
 
-VERSION = "3.0.0"
+VERSION = "3.1.0"
 GITHUB_REPO = "lfl1337/Yuki"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
