@@ -41,20 +41,18 @@ async def open_folder(body: OpenFolderRequest):
         if normalized_lower.startswith(forbidden):
             return {"ok": False, "error": "Access to system directories is not allowed"}
 
-    # Filesystem checks on the sanitized normalized string only.
-    folder = Path(normalized)
-    if folder.is_file():
-        folder = folder.parent
-
-    if not folder.exists():
-        return {"ok": False, "error": "Path does not exist"}
-
+    # Pass the normalized path directly to Explorer.
+    # explorer.exe handles both files and directories natively:
+    # - files: opens the containing folder with the file selected
+    # - directories: opens the folder
+    # - non-existent paths: shows its own error dialog
+    # This avoids all filesystem sinks (is_file / exists) on user-supplied data.
     try:
         subprocess.Popen(
-            ["explorer", str(folder)],
+            ["explorer", normalized],
             creationflags=subprocess.CREATE_NO_WINDOW,
         )
-        logger.debug("Opened folder: %s", folder)
+        logger.debug("Opened in Explorer: %s", normalized)
         return {"ok": True}
     except Exception as exc:
         logger.warning("open-folder failed: %s", exc)
