@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
@@ -14,15 +15,10 @@ from ..services.player_engine import AudioPlayer
 logger = logging.getLogger("yuki.routers.player")
 router = APIRouter(prefix="/player", tags=["player"])
 
-
-def _get() -> AudioPlayer:
-    return player_svc.get_player()
-
-
-_ALLOWED_AUDIO_EXTENSIONS = {
+_ALLOWED_AUDIO_EXTENSIONS = frozenset({
     ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
     ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
-}
+})
 
 _FORBIDDEN_PATH_PREFIXES = (
     "c:\\windows",
@@ -33,34 +29,54 @@ _FORBIDDEN_PATH_PREFIXES = (
 )
 
 
-async def _validate_audio_filepath(filepath: str) -> Path:
-    """Resolve and validate a user-supplied file path."""
-    p = Path(filepath).resolve()
-    # Validate extension whitelist before any filesystem operations
-    if p.suffix.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
+def _get() -> AudioPlayer:
+    return player_svc.get_player()
+
+
+async def _validate_audio_filepath(filepath: str) -> str:
+    """
+    Sanitize and validate a user-supplied file path.
+
+    Returns the normalized absolute path as a plain string.
+    All callers MUST use this return value — never the original user input.
+
+    Sanitization: normpath+abspath (pure-string, no filesystem), extension
+    allowlist, forbidden-dir blocklist — all before any filesystem access.
+    Filesystem checks (exists, is_file) are performed on the sanitized string.
+    """
+    normalized = os.path.normpath(os.path.abspath(filepath))
+
+    _, ext = os.path.splitext(normalized)
+    if ext.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
         raise HTTPException(status_code=400, detail="File type not allowed")
-    # Reject access to system directories before touching the filesystem
-    p_str = str(p).lower()
+
+    normalized_lower = normalized.lower()
     for forbidden in _FORBIDDEN_PATH_PREFIXES:
-        if p_str.startswith(forbidden):
-            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
-    exists = await asyncio.to_thread(p.exists)
-    if not exists:
+        if normalized_lower.startswith(forbidden):
+            raise HTTPException(
+                status_code=403,
+                detail="Access to system directories is not allowed",
+            )
+
+    p = Path(normalized)
+    if not await asyncio.to_thread(p.exists):
         raise HTTPException(status_code=404, detail="File not found")
-    is_file = await asyncio.to_thread(p.is_file)
-    if not is_file:
+    if not await asyncio.to_thread(p.is_file):
         raise HTTPException(status_code=400, detail="Path is not a file")
-    return p
+
+    return normalized
 
 
 @router.post("/load")
 async def load(body: PlayerLoadRequest):
-    await _validate_audio_filepath(body.filepath)
+    safe = await _validate_audio_filepath(body.filepath)
     try:
-        await asyncio.to_thread(_get().load, body.filepath)
+        await asyncio.to_thread(_get().load, safe)
         # Warm the tag cache immediately so SSE never reads from disk
-        await asyncio.to_thread(player_svc.notify_loaded, body.filepath)
+        await asyncio.to_thread(player_svc.notify_loaded, safe)
         return {"ok": True}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(400, str(exc))
 

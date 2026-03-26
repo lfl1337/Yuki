@@ -1,6 +1,7 @@
 """System utility endpoints — open folder in Explorer, etc."""
 
 import logging
+import os
 import subprocess
 from pathlib import Path
 
@@ -31,14 +32,17 @@ async def open_folder(body: OpenFolderRequest):
     if not raw:
         return {"ok": False, "error": "empty path"}
 
-    folder = Path(raw).resolve()
+    # Pure-string normalization — no filesystem access at this point.
+    normalized = os.path.normpath(os.path.abspath(raw))
 
-    # Reject access to system directories before any filesystem operations
-    folder_str = str(folder).lower()
+    # Reject system directories before any filesystem operation.
+    normalized_lower = normalized.lower()
     for forbidden in _FORBIDDEN_PATH_PREFIXES:
-        if folder_str.startswith(forbidden):
+        if normalized_lower.startswith(forbidden):
             return {"ok": False, "error": "Access to system directories is not allowed"}
 
+    # Filesystem checks on the sanitized normalized string only.
+    folder = Path(normalized)
     if folder.is_file():
         folder = folder.parent
 

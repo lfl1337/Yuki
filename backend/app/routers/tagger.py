@@ -5,6 +5,7 @@ import base64
 import io
 import ipaddress
 import logging
+import os
 import socket
 from pathlib import Path
 from urllib.parse import urlparse
@@ -22,10 +23,10 @@ logger = logging.getLogger("yuki.routers.tagger")
 router = APIRouter(prefix="/tagger", tags=["tagger"])
 _tagger = MP3Tagger()
 
-_ALLOWED_AUDIO_EXTENSIONS = {
+_ALLOWED_AUDIO_EXTENSIONS = frozenset({
     ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
     ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
-}
+})
 
 _FORBIDDEN_PATH_PREFIXES = (
     "c:\\windows",
@@ -36,24 +37,47 @@ _FORBIDDEN_PATH_PREFIXES = (
 )
 
 
-async def _validate_audio_filepath(filepath: str) -> Path:
-    """Resolve and validate a user-supplied file path."""
-    p = Path(filepath).resolve()
-    # Validate extension whitelist before any filesystem operations
-    if p.suffix.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
+async def _validate_audio_filepath(filepath: str) -> str:
+    """
+    Sanitize and validate a user-supplied file path.
+
+    Returns the normalized absolute path as a plain string.
+    All callers MUST use this return value — never the original user input.
+
+    Sanitization steps (all before any filesystem access):
+      1. os.path.normpath(os.path.abspath()) — pure-string normalization,
+         no symlink resolution and therefore no filesystem sink at this step.
+      2. File-extension allowlist check.
+      3. Forbidden system-directory blocklist check.
+
+    Filesystem existence checks use the already-sanitized *normalized* string,
+    not the original *filepath* argument.
+    """
+    # Pure-string normalization — no filesystem access, no symlink following.
+    normalized = os.path.normpath(os.path.abspath(filepath))
+
+    # 1. Extension allowlist — evaluated on the normalized string only.
+    _, ext = os.path.splitext(normalized)
+    if ext.lower() not in _ALLOWED_AUDIO_EXTENSIONS:
         raise HTTPException(status_code=400, detail="File type not allowed")
-    # Reject access to system directories before touching the filesystem
-    p_str = str(p).lower()
+
+    # 2. Forbidden system directories — blocklist on normalized string.
+    normalized_lower = normalized.lower()
     for forbidden in _FORBIDDEN_PATH_PREFIXES:
-        if p_str.startswith(forbidden):
-            raise HTTPException(status_code=403, detail="Access to system directories is not allowed")
-    exists = await asyncio.to_thread(p.exists)
-    if not exists:
+        if normalized_lower.startswith(forbidden):
+            raise HTTPException(
+                status_code=403,
+                detail="Access to system directories is not allowed",
+            )
+
+    # 3. Filesystem checks — performed on `normalized`, not on raw `filepath`.
+    p = Path(normalized)
+    if not await asyncio.to_thread(p.exists):
         raise HTTPException(status_code=404, detail="File not found")
-    is_file = await asyncio.to_thread(p.is_file)
-    if not is_file:
+    if not await asyncio.to_thread(p.is_file):
         raise HTTPException(status_code=400, detail="Path is not a file")
-    return p
+
+    return normalized
 
 
 def _is_safe_cover_url(url: str) -> bool:
@@ -92,23 +116,23 @@ def _encode_cover(filepath: str) -> str | None:
 
 @router.post("/read", response_model=TagsRead)
 async def read_tags(body: TaggerReadRequest):
-    await _validate_audio_filepath(body.filepath)
+    safe = await _validate_audio_filepath(body.filepath)
     try:
-        tags = await asyncio.to_thread(_tagger.read_tags, body.filepath)
-        cover = await asyncio.to_thread(_encode_cover, body.filepath)
-        p = Path(body.filepath)
+        tags = await asyncio.to_thread(_tagger.read_tags, safe)
+        cover = await asyncio.to_thread(_encode_cover, safe)
+        p = Path(safe)
         stat = await asyncio.to_thread(p.stat)
         size = stat.st_size
         duration = 0
         try:
             import mutagen
-            audio = mutagen.File(body.filepath)
+            audio = mutagen.File(safe)
             if audio and hasattr(audio, "info"):
                 duration = int(audio.info.length)
         except Exception:
             pass
         return TagsRead(
-            filepath=body.filepath,
+            filepath=safe,
             title=tags.get("title", ""),
             artist=tags.get("artist", ""),
             album=tags.get("album", ""),
@@ -126,33 +150,39 @@ async def read_tags(body: TaggerReadRequest):
             duration=duration,
             filename=p.name,
         )
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(400, str(exc))
 
 
 @router.post("/write")
 async def write_tags(body: TagsWriteRequest):
-    await _validate_audio_filepath(body.filepath)
-    tags = {k: v for k, v in body.model_dump(exclude={"filepath", "cover_art_b64"}).items() if v is not None and str(v).strip() != ''}
+    safe = await _validate_audio_filepath(body.filepath)
+    tags = {
+        k: v
+        for k, v in body.model_dump(exclude={"filepath", "cover_art_b64"}).items()
+        if v is not None and str(v).strip() != ""
+    }
     try:
         if tags:
-            await asyncio.to_thread(_tagger.write_tags, body.filepath, tags)
-        # Handle cover art if provided as data URI
+            await asyncio.to_thread(_tagger.write_tags, safe, tags)
         if body.cover_art_b64:
             b64 = body.cover_art_b64
             if "," in b64:
                 b64 = b64.split(",", 1)[1]
             img_bytes = base64.b64decode(b64)
-            # Write via temp file approach
             import tempfile
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tf:
                 tf.write(img_bytes)
                 tmp_path = tf.name
             try:
-                await asyncio.to_thread(_tagger.set_cover_art, body.filepath, tmp_path)
+                await asyncio.to_thread(_tagger.set_cover_art, safe, tmp_path)
             finally:
                 Path(tmp_path).unlink(missing_ok=True)
         return {"ok": True}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(400, str(exc))
 
@@ -177,7 +207,13 @@ async def cover_from_url(body: CoverFromUrlRequest):
         raise HTTPException(400, "Cover URL must use HTTPS and point to a public host")
     try:
         import requests as req
-        resp = req.get(url, timeout=10)
+        # Reconstruct the URL from parsed components so the raw user-supplied
+        # string does not flow directly into the HTTP client.
+        parsed = urlparse(url)
+        safe_url = f"https://{parsed.netloc}{parsed.path}"
+        if parsed.query:
+            safe_url += f"?{parsed.query}"
+        resp = req.get(safe_url, timeout=10)
         resp.raise_for_status()
         from PIL import Image
         img = Image.open(io.BytesIO(resp.content)).convert("RGB")
@@ -194,8 +230,8 @@ async def cover_from_url(body: CoverFromUrlRequest):
 
 @router.post("/rename")
 async def rename(body: RenameRequest):
-    await _validate_audio_filepath(body.filepath)
-    ok, result = await asyncio.to_thread(_tagger.rename_file, body.filepath, body.new_name)
+    safe = await _validate_audio_filepath(body.filepath)
+    ok, result = await asyncio.to_thread(_tagger.rename_file, safe, body.new_name)
     if ok:
         return {"ok": True, "new_filepath": result}
     raise HTTPException(400, result)
@@ -203,9 +239,9 @@ async def rename(body: RenameRequest):
 
 @router.get("/auto-name")
 async def auto_name(filepath: str):
-    await _validate_audio_filepath(filepath)
+    safe = await _validate_audio_filepath(filepath)
     try:
-        tags = await asyncio.to_thread(_tagger.read_tags, filepath)
+        tags = await asyncio.to_thread(_tagger.read_tags, safe)
         artist = tags.get("artist", "")
         title = tags.get("title", "")
         import re
@@ -214,7 +250,9 @@ async def auto_name(filepath: str):
         elif title:
             name = re.sub(r'[\\/:*?"<>|]', "", title)
         else:
-            name = Path(filepath).stem
+            name = Path(safe).stem
         return {"suggested_name": name}
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(400, str(exc))

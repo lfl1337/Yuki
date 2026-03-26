@@ -6,6 +6,7 @@ Parses ffmpeg stderr for progress (time= pattern).
 
 import asyncio
 import logging
+import os
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -14,15 +15,17 @@ from typing import Optional
 
 from ..config import settings
 
-_ALLOWED_INPUT_EXTENSIONS = {
+logger = logging.getLogger("yuki.converter")
+
+_ALLOWED_INPUT_EXTENSIONS = frozenset({
     ".mp3", ".flac", ".wav", ".ogg", ".aac", ".m4a", ".opus",
     ".wma", ".mp4", ".mkv", ".avi", ".mov", ".webm",
-}
+})
 
-_ALLOWED_OUTPUT_FORMATS = {
+_ALLOWED_OUTPUT_FORMATS = frozenset({
     "mp3", "flac", "wav", "ogg", "aac", "opus", "m4a", "wma",
     "mp4", "mkv", "avi", "mov", "webm", "gif",
-}
+})
 
 _FORBIDDEN_PATH_PREFIXES = (
     "c:\\windows",
@@ -31,8 +34,6 @@ _FORBIDDEN_PATH_PREFIXES = (
     "c:\\programdata",
     "c:\\system volume information",
 )
-
-logger = logging.getLogger("yuki.converter")
 
 _semaphore: Optional[asyncio.Semaphore] = None
 _jobs: dict[str, "ConversionJob"] = {}
@@ -78,6 +79,29 @@ def cancel_job(job_id: str) -> bool:
     return True
 
 
+def _validate_path(raw: str, allow_extensions: Optional[frozenset] = None) -> str:
+    """
+    Sanitize a user-supplied path using pure-string normalization,
+    then check against the extension allowlist and forbidden-directory blocklist.
+
+    Returns the normalized absolute path string.
+    Callers MUST use this return value — never the original user-supplied string.
+    """
+    normalized = os.path.normpath(os.path.abspath(raw))
+
+    if allow_extensions is not None:
+        _, ext = os.path.splitext(normalized)
+        if ext.lower() not in allow_extensions:
+            raise ValueError(f"File extension not allowed: {ext!r}")
+
+    normalized_lower = normalized.lower()
+    for forbidden in _FORBIDDEN_PATH_PREFIXES:
+        if normalized_lower.startswith(forbidden):
+            raise ValueError("Access to system directories is not allowed")
+
+    return normalized
+
+
 async def start_conversion(
     files: list[str],
     output_format: str,
@@ -88,27 +112,23 @@ async def start_conversion(
     filename_pattern: str = "{name}_{format}",
     create_subfolder: bool = False,
 ) -> list[str]:
-    # Validate output format against allowlist
+    # Validate output format against allowlist.
     if output_format.lower() not in _ALLOWED_OUTPUT_FORMATS:
-        raise ValueError(f"Unsupported output format: {output_format}")
+        raise ValueError(f"Unsupported output format: {output_format!r}")
+
+    # Sanitize output_dir if provided.
+    safe_output_dir = _validate_path(output_dir) if output_dir else ""
+
     job_ids = []
     for input_path in files:
-        p = Path(input_path).resolve()
-        # Validate input extension against allowlist before filesystem use
-        if p.suffix.lower() not in _ALLOWED_INPUT_EXTENSIONS:
-            raise ValueError(f"Input file type not allowed: {p.suffix}")
-        # Reject system directories
-        p_str = str(p).lower()
-        for forbidden in _FORBIDDEN_PATH_PREFIXES:
-            if p_str.startswith(forbidden):
-                raise ValueError("Access to system directories is not allowed")
-        input_path = str(p)
+        # Sanitize each input path: pure-string normalization + extension + forbidden dirs.
+        safe_input = _validate_path(input_path, allow_extensions=_ALLOWED_INPUT_EXTENSIONS)
         job_id = str(uuid.uuid4())
         out_path = _resolve_output_path(
-            input_path, output_format, output_dir,
+            safe_input, output_format, safe_output_dir,
             filename_mode, filename_suffix, filename_pattern, create_subfolder
         )
-        job = ConversionJob(job_id=job_id, input_path=input_path, output_path=out_path)
+        job = ConversionJob(job_id=job_id, input_path=safe_input, output_path=out_path)
         _jobs[job_id] = job
         asyncio.create_task(_run_conversion(job, output_format, quality))
         job_ids.append(job_id)
@@ -119,6 +139,7 @@ def _resolve_output_path(
     input_path: str, output_format: str, output_dir: str,
     filename_mode: str, suffix: str, pattern: str, create_subfolder: bool
 ) -> str:
+    # input_path and output_dir are already sanitized by the caller.
     p = Path(input_path)
     base_dir = Path(output_dir) if output_dir else p.parent
     if create_subfolder:
@@ -137,11 +158,11 @@ def _resolve_output_path(
             format=output_format.lower(),
             date=datetime.date.today().strftime("%Y%m%d"),
         )
-    output_path = (base_dir / (name + ext)).resolve()
-    allowed_dir = base_dir.resolve()
-    if not str(output_path).startswith(str(allowed_dir)):
-        raise ValueError(f"Illegal filename pattern: path escapes output directory")
-    return str(output_path)
+    output_path = os.path.normpath(str(base_dir / (name + ext)))
+    allowed_dir = os.path.normpath(str(base_dir))
+    if not output_path.lower().startswith(allowed_dir.lower()):
+        raise ValueError("Illegal filename pattern: path escapes output directory")
+    return output_path
 
 
 def _build_ffmpeg_cmd(
@@ -199,7 +220,6 @@ async def _run_conversion(job: ConversionJob, output_format: str, quality: dict)
             return
         job.status = "converting"
         try:
-            # Get duration first
             probe_cmd = [
                 settings.ffprobe_path, "-v", "error",
                 "-show_entries", "format=duration",
@@ -227,7 +247,6 @@ async def _run_conversion(job: ConversionJob, output_format: str, quality: dict)
                 stderr=asyncio.subprocess.PIPE,
             )
 
-            # Read stderr for progress
             while True:
                 if job._cancel.is_set():
                     proc.kill()
