@@ -18,6 +18,23 @@ Yuki_Setup_*.exe
 # v2 additions
 legacy_customtkinter.7z
 legacy_customtkinter.zip
+
+# legacy v1 root-level files (archived in legacy_customtkinter.zip)
+core/
+ui/
+locales/
+config.py
+main.py
+build.bat
+installer.nsi
+release.bat
+requirements.txt
+version.json
+version_bump.bat
+version_info.txt
+package-lock.json
+PLAN_*.md
+Yuki.spec
 backend/.runtime_port
 backend/*.db
 backend/logs/
