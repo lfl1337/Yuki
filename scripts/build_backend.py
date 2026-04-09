@@ -5,7 +5,7 @@ Build the Yuki Python backend into a single-file executable for Tauri sidecar.
 Output: frontend/src-tauri/binaries/yuki-backend-x86_64-pc-windows-msvc.exe
 
 Usage:
-    cd C:\Projekte\yuki
+    cd F:\Projekte\yuki
     uv run python scripts/build_backend.py
 """
 

@@ -12,7 +12,6 @@ dependencies = [
     "pydantic-settings>=2.2.0",
     "slowapi>=0.1.9",
     "yt-dlp>=2024.1.0",
-    "spotdl>=4.2.0",
     "mutagen>=1.47.0",
     "Pillow>=10.0.0",
     "pygame>=2.5.0",

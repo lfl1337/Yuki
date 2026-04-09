@@ -41,7 +41,7 @@ def main():
 
     logger = logging.getLogger("yuki.run")
     logger.info("=" * 50)
-    logger.info("Yuki Backend v2.2.0 starting")
+    logger.info("Yuki Backend v3.1.0 starting")
     logger.info("Data dir: %s", data_dir)
     logger.info("Python: %s", sys.version.split()[0])
 

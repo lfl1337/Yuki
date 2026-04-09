@@ -91,7 +91,7 @@ app.include_router(system.router, prefix="/api/v1")
 async def health():
     return {
         "status": "ok",
-        "version": "2.0.3",
+        "version": "3.1.0",
         "service": "yuki-backend",
         "port": settings.port,
     }
