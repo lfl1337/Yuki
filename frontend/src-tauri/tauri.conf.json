@@ -4,7 +4,7 @@
   "identifier": "app.yuki.media",
   "build": {
     "beforeDevCommand": "npm run vite",
-    "devUrl": "http://localhost:1421",
+    "devUrl": "http://localhost:1423",
     "beforeBuildCommand": "npm run vite build",
     "frontendDist": "../dist"
   },

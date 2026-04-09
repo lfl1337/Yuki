@@ -24,7 +24,7 @@ function readBackendPort(): number {
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 1421,
+    port: 1423,
     strictPort: true,
     proxy: {
       "/api": {

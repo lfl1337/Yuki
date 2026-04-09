@@ -5,18 +5,18 @@
 Yuki v2 is a Windows media downloader/player/editor built with:
 
 - **Tauri 2** shell (Rust) — window, sidecar management
-- **React 18 + TypeScript** frontend — Vite on port 1421, Tailwind CSS
+- **React 18 + TypeScript** frontend — Vite on port 1423, Tailwind CSS
 - **FastAPI + Python** backend — sidecar on port 9001, SQLite via SQLAlchemy async
-- **yt-dlp, spotdl, ffmpeg, mutagen, pygame** — all Python libs, no native Rust equivalents
+- **yt-dlp, ffmpeg, mutagen, pygame** — Python libs; **spotdl** — CLI subprocess only (not a Python dep)
 
-This is the same architecture as `C:\Projekte\Hime\app\`. When in doubt, check Hime for patterns.
+This is the same architecture as `N:\Projekte\NiN\Hime\app\`. When in doubt, check Hime for patterns.
 
 ---
 
 ## Directory structure
 
 ```
-C:\Projekte\yuki\
+N:\Projekte\NiN\yuki\
 ├── VERSION                     ← single source of truth (2.0.0)
 ├── CLAUDE.md
 ├── dev.bat                     ← starts backend + Tauri dev (run this for dev)
@@ -59,7 +59,7 @@ C:\Projekte\yuki\
 │
 ├── frontend/
 │   ├── package.json            ← React 18, react-router-dom, zustand, i18next, lucide-react, tailwind
-│   ├── vite.config.ts          ← port 1421, /api proxy → reads .runtime_port on every request
+│   ├── vite.config.ts          ← port 1423, /api proxy → reads .runtime_port on every request
 │   ├── tailwind.config.js      ← accent #7C6FCD, bg-primary #09090b
 │   └── src/
 │       ├── App.tsx             ← StartupSplash → AppShell (Sidebar + Routes + PlayerBar + Settings)
@@ -95,14 +95,14 @@ C:\Projekte\yuki\
 ```bash
 # Option A: double-click dev.bat
 # Option B: manual
-cd C:\Projekte\yuki\backend
+cd N:\Projekte\NiN\yuki\backend
 uv run python run.py
 # in another terminal:
-cd C:\Projekte\yuki\frontend
+cd N:\Projekte\NiN\yuki\frontend
 npm run dev:frontend
 ```
 
-Frontend: http://localhost:1421
+Frontend: http://localhost:1423
 Backend health: http://localhost:9001/health
 Port file: `backend/.runtime_port`
 
@@ -113,7 +113,7 @@ Port file: `backend/.runtime_port`
 | Item | Value |
 |------|-------|
 | Backend default port | 9001 |
-| Vite dev port | 1421 |
+| Vite dev port | 1423 |
 | App identifier | `app.yuki.media` |
 | APPDATA folder | `%APPDATA%\Yuki` |
 | Backend env prefix | `YUKI_` |
