@@ -18,7 +18,7 @@ function readBackendPort(): number {
       // not written yet, try next
     }
   }
-  return 9001;
+  return 24600;
 }
 
 export default defineConfig({

@@ -35,7 +35,7 @@ def _resolve_ffprobe() -> str:
 
 
 class Settings(BaseSettings):
-    port: int = 9001
+    port: int = 24600
     data_dir: str = ""
     db_url: str = ""
     ffmpeg_path: str = ""
